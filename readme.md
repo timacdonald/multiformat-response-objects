@@ -208,6 +208,29 @@ This route will be able to respond to the following urls and formats in the resp
 - http://example.com/users.csv [CSV]
 - http://example.com/users.xlsx [XLSX]
 
+## I hate magic
+
+That's cool. Not everyone loves it. You don't have to use the `make` method. Just add your own contructor and set your class attributes as you like!
+
+```php
+class UserResponse extends Response
+{
+    /**
+     * @var \Illuminate\Database\Eloquent\Builder
+     */
+    private $query;
+
+    public function __construct(Builder $query)
+    {
+        $this->query = $query;
+    }
+}
+
+//...
+
+return new UserResponse($query);
+```
+
 ## The Journey
 
 You've read the readme, you've seen the code, now read the journey. If you wanna see how I came to this solution, you can read my blog post: https://timacdonald.me/versatile-response-objects-laravel/. Warning: it's a bit of a rant.
