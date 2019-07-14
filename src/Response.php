@@ -3,11 +3,11 @@
 namespace TiMacDonald\MultiFormat;
 
 use Exception;
-use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Symfony\Component\Mime\MimeTypes;
+use Illuminate\Contracts\Support\Responsable;
 
 class Response implements Responsable
 {
@@ -38,6 +38,13 @@ class Response implements Responsable
         return $this;
     }
 
+    public function withDefaultFormat(string $format): self
+    {
+        $this->defaultFormat = $format;
+
+        return $this;
+    }
+
     public function withFormatOverrides(array $formatOverrides): self
     {
         $this->formatOverrides = array_merge($this->formatOverrides, $formatOverrides);
@@ -54,13 +61,6 @@ class Response implements Responsable
         return app()->call([$this, $this->responseMethod($request)], [
             'request' => $request,
         ]);
-    }
-
-    public function withDefaultFormat(string $format): self
-    {
-        $this->defaultFormat = $format;
-
-        return $this;
     }
 
     private function responseMethod(Request $request): string
