@@ -1,6 +1,6 @@
 # Multi-format Response Object for Laravel
 
-[![Latest Stable Version](https://poser.pugx.org/timacdonald/multiformat-response-objects/v/stable)](https://packagist.org/packages/timacdonald/multiformat-response-objects) [![Total Downloads](https://poser.pugx.org/timacdonald/multiformat-response-objects/downloads)](https://packagist.org/packages/timacdonald/multiformat-response-objects) [![License](https://poser.pugx.org/timacdonald/multiformat-response-objects/license)](https://packagist.org/packages/timacdonald/multiformat-response-objects)
+[![Total Downloads](https://poser.pugx.org/timacdonald/multiformat-response-objects/downloads)](https://packagist.org/packages/timacdonald/multiformat-response-objects) [![License](https://poser.pugx.org/timacdonald/multiformat-response-objects/license)](https://packagist.org/packages/timacdonald/multiformat-response-objects)
 
 In some situations you may want to support multiple return formats (HTML, JSON, CSV, XLSX) for the one endpoint and controller. This package gives you a base class that helps you return different formats of the same data. It supports specifying the return format as a file extension or as an `Accept` header. It also allows you to have shared and format specific logic, all while sharing the same route and controller.
 
@@ -14,7 +14,7 @@ $ composer require timacdonald/multiformat-response-objects
 
 ## Getting started
 
-This package is designed to help if you have ever created a controller that looks like this...
+This package is designed to help if you have ever created two different controllers just to provide different formats (HTML / JSON) but the controllers have a lot of shared logic, or if you have ever created a controller that looks like this...
 
 ```php
 class UserController
