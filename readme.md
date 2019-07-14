@@ -64,7 +64,7 @@ You might notice a few things about the above controller:
 
 This package cleans up this style of controller. Let me show you how...
 
-## Cleaning up the controller
+### Cleaning up the controller
 
 The first step to refactoring the controller is to replace the format specific logic with the response object. You will no doubt do this step last, but I think it is easier to demonstrate it this way.
 
@@ -84,7 +84,7 @@ class UserController
 
 You can pass values into the response object by passing an array of data to the static `make` method. This is similar to how you may already be sending view data `view('users.index', ['some' => 'data'])`.
 
-## The response object
+### The response object
 
 In order to support a particular response format, you need to add a corresponding response method. If you want to provide your blog posts in mp3 audio format, you would add a `toMp3Response` method to you response object.
 
@@ -120,13 +120,15 @@ class UserResponse extends Response
 
 You can see the `toCsvResponse` method has type hinted the `CsvWriter`. This dependency is only resolved when the request format is CSV. You can also magically access any of the data you passed into the `make` method as an attribute on the object e.g. `$this->query`.
 
+That is all there is to it really. Below are some more detailed docs and features.
+
 ## Detecting response format
 
-The response object will automatically detect the requested response format by checking for a file extension on the request's url and will fallback to the `Accept` header if no extension is found.
+The response object will automatically detect the requested response format by checking for a file extension on the request's url and will fallback to the `Accept` header if no extension is found. Under the hood we are using Symfony's `MimeTypes` class to detect the extension. We then fallback to Laravel's `Request::format()` method. The first matching mime type and first matching extension will be used. You can override this behaviour as outlined below.
 
-It is pretty standard for an API to handle content negotiation with the `Accept` header. However it is often handy to be able to specify the response format with a file extension as well.
+### Why file extensions?
 
-This is probably most handy from a web interface where you can link the the same url but provide an extension to tell the server what format you want.
+It is pretty standard for an API to handle content negotiation with the `Accept` header. However it is often handy to be able to specify the response format with a file extension as well. This is probably most handy from a web interface where you can link the the same url but provide an extension to tell the server what format you want.
 
 ```html
 <h2>Downloads</h2>
@@ -152,15 +154,15 @@ In order to support a format, you create a `to{Format}Response` method, where `{
 - HTML: `toHtmlResponse()`
 - XLSX: `toXlsxResponse()`
 
-### Dependency Method Injection
+### Dependency Injection
 
-The format method will be called by the container, allowing you to resolve **format specific dependencies** from the container. As seen in the basic usage example, the html format has no dependencies, however the csv format has a `CsvWriter` dependency.
+As mentioned previously, the format method will be called by the container, allowing you to resolve **format specific dependencies** from the container. As seen in the basic usage example, the html format has no dependencies, however the csv format has a `CsvWriter` dependency.
 
 ## Default response format
 
-It is possible to set a default response format, either from the calling controller, or from within the response object itself. This default format will be used if the url and the `Accept` header have no set value.
+It is possible to set a default response format, either from the calling controller, or from within the response object itself. This default format will be used if the url and the `Accept` header have no set value, or if not matches are found against existing `Accept` types.
 
-### Setting it in the controller
+### In the controller
 
 ```php
 class UserController
@@ -175,7 +177,7 @@ class UserController
 }
 ```
 
-### Setting it in the response object
+### In the response object
 
 ```php
 class UserResponse extends Response
@@ -185,6 +187,42 @@ class UserResponse extends Response
     // ...
 }
 ```
+
+## Overriding formats
+
+If there is a situation where the mime type you want to support is not being converted to the correct extension, either because it doesn't exist in the underlying libraries, or because it is matching the first extension and you want to use another, it is possible for you to manually specify overrides.
+
+### In the controller
+
+```php
+class UserController
+{
+    public function index()
+    {
+        //...
+
+        return UserResponse::make(['query' => $query])
+            ->withFormatOverrides([
+                'text/csv' => 'xlsx',
+            ]);
+    }
+}
+```
+
+### In the response object
+
+```php
+class UserResponse extends Response
+{
+    protected $formatOverrides = [
+        'text/csv' => 'xlsx',
+    ];
+
+    // ...
+}
+```
+
+The above would result in `toXlsxResponse` being called if the Accept header is `text/csv`.
 
 ## Routing
 
