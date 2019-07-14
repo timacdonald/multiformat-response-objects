@@ -160,7 +160,7 @@ As mentioned previously, the format method will be called by the container, allo
 
 ## Default response format
 
-It is possible to set a default response format, either from the calling controller, or from within the response object itself. This default format will be used if the url and the `Accept` header have no set value, or if not matches are found against existing `Accept` types.
+It is possible to set a default response format, either from the calling controller, or from within the response object itself. This default format will be used if the url and the `Accept` header have no set value, or if no matches are found against existing `Accept` types.
 
 ### In the controller
 
