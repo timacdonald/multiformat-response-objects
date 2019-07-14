@@ -7,6 +7,7 @@ use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use Symfony\Component\Mime\MimeTypes;
 
 class Response implements Responsable
 {
@@ -14,6 +15,11 @@ class Response implements Responsable
      * @var string
      */
     protected $defaultFormat = 'html';
+
+    /**
+     * @var array
+     */
+    protected $formatOverrides = [];
 
     /**
      * @var array
@@ -28,6 +34,13 @@ class Response implements Responsable
     public function with($data): self
     {
         $this->data = array_merge($this->data, $data);
+
+        return $this;
+    }
+
+    public function withFormatOverrides(array $formatOverrides): self
+    {
+        $this->formatOverrides = array_merge($this->formatOverrides, $formatOverrides);
 
         return $this;
     }
@@ -57,22 +70,21 @@ class Response implements Responsable
 
     private function contentType(Request $request): string
     {
-        if ($format = $this->urlContentType($request->path())) {
-            return $format;
-        }
-
-        $format = $request->format();
-
-        if ($format !== 'html') {
-            return $format;
-        }
-
-        return $this->defaultFormat;
+        return $this->urlContentType($request)
+            ?? $this->acceptHeaderType($request)
+            ?? $this->defaultFormat;
     }
 
-    private function urlContentType(string $path): ?string
+    private function acceptHeaderType(Request $request) : ?string
     {
-        return $this->extension($this->filename($path));
+        return (new MimeExtension($this->formatOverrides))->find(
+            $request->getAcceptableContentTypes()
+        ) ?? $request->format(null);
+    }
+
+    private function urlContentType(Request $request): ?string
+    {
+        return $this->extension($this->filename($request));
     }
 
     private function extension(string $filename): ?string
@@ -84,9 +96,9 @@ class Response implements Responsable
         return Arr::last(explode('.', $filename));
     }
 
-    private function filename(string $path): string
+    private function filename(Request $request): string
     {
-        return Arr::last(explode('/', $path));
+        return Arr::last(explode('/', $request->path()));
     }
 
     /**

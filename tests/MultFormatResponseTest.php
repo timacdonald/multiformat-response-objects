@@ -96,6 +96,34 @@ class MultFormatResponseTest extends TestCase
         $this->assertSame('expected json response', $response->content());
     }
 
+    public function test_responds_to_first_matching_accepts_header()
+    {
+        Route::get('location', function () {
+            return new TestResponse;
+        });
+
+        $response = $this->get('location', [
+            'Accept' => 'text/csv, text/css',
+        ]);
+
+        $response->assertOk();
+        $this->assertSame('expected csv response', $response->content());
+    }
+
+    public function test_responds_to_a_more_obscure_accept_header()
+    {
+        Route::get('location', function () {
+            return new TestResponse;
+        });
+
+        $response = $this->get('location', [
+            'Accept' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+
+        $response->assertOk();
+        $this->assertSame('expected xlsx response', $response->content());
+    }
+
     public function test_last_dot_segement_is_used_as_the_extension_type()
     {
         Route::get('websites/{domain}{format}', function () {
@@ -203,7 +231,7 @@ class MultFormatResponseTest extends TestCase
             return TestResponse::make()->withDefaultFormat('csv');
         });
 
-        $response = $this->get('location');
+        $response = $this->get('location', ['Accept' => null]);
 
         $response->assertOk();
         $this->assertSame('expected csv response', $response->content());
@@ -211,13 +239,13 @@ class MultFormatResponseTest extends TestCase
 
     public function test_exception_is_throw_if_no_response_method_exists()
     {
-        $this->expectExceptionMessage('Method Tests\TestResponse::toXlsxResponse() does not exist');
+        $this->expectExceptionMessage('Method Tests\TestResponse::toMp3Response() does not exist');
 
         Route::get('location{format}', function () {
             return new TestResponse;
         });
 
-        $response = $this->get('location.xlsx');
+        $response = $this->get('location.mp3');
     }
 
     public function test_url_html_format_is_used_when_the_default_has_another_value()
@@ -230,6 +258,18 @@ class MultFormatResponseTest extends TestCase
 
         $response->assertOk();
         $this->assertSame('expected html response', $response->content());
+    }
+
+    public function test_can_override_formats()
+    {
+        Route::get('location', function () {
+            return (new TestResponse)->withFormatOverrides(['text/csv' => 'json']);
+        });
+
+        $response = $this->get('location', ['Accept' => 'text/csv']);
+
+        $response->assertOk();
+        $this->assertSame('expected json response', $response->content());
     }
 }
 
@@ -248,6 +288,11 @@ class TestResponse extends Response
     public function toCsvResponse()
     {
         return 'expected csv response';
+    }
+
+    public function toXlsxResponse()
+    {
+        return 'expected xlsx response';
     }
 }
 
