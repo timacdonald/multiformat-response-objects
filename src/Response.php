@@ -69,7 +69,7 @@ class Response implements Responsable
 
     private function extension(Request $request): string
     {
-        return (new Extension($this->formatOverrides))->parse($request, $this->defaultFormat);
+        return (new Extension($this->formatOverrides))->parse($request) ?? $this->defaultFormat;
     }
 
     /**

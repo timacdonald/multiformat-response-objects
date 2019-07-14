@@ -16,11 +16,9 @@ class Extension
         $this->formatOverrides = $formatOverrides;
     }
 
-    public function parse(Request $request, string $defaultFormat = 'html'): string
+    public function parse(Request $request): ?string
     {
-        return $this->urlExtension($request)
-            ?? $this->acceptHeaderExtension($request)
-            ?? $defaultFormat;
+        return $this->urlExtension($request) ?? $this->acceptHeaderExtension($request);
     }
 
     private function acceptHeaderExtension(Request $request) : ?string
