@@ -124,7 +124,9 @@ That is all there is to it really. Below are some more detailed docs and feature
 
 ## Detecting response format
 
-The response object will automatically detect the requested response format by checking for a file extension on the request's url and will fallback to the `Accept` header if no extension is found. Under the hood we are using Symfony's `MimeTypes` class to detect the extension. We then fallback to Laravel's `Request::format()` method. The first matching mime type and first matching extension will be used. You can override this behaviour as outlined below.
+The response object will automatically detect the requested response format by checking for a file extension on the request's url and will fallback to the `Accept` header if no extension is found. Under the hood we are using Symfony's `MimeTypes` class to detect the extension. We then fallback to Laravel's `Request::format()` method. The first matching mime type and first matching extension will be used.
+
+You do not *have* to support file extensions. This is entirely in your control. If you only want to support the `Accept` header than set up your routing to not supportextensions.
 
 ### Why file extensions?
 
@@ -192,6 +194,14 @@ class UserResponse extends Response
 
 If there is a situation where the mime type you want to support is not being converted to the correct extension, either because it doesn't exist in the underlying libraries, or because it is matching the first extension and you want to use another, it is possible for you to manually specify overrides.
 
+Look at `audio/mpeg` for example. There are several extensions associated with this content type.
+
+```php
+'audio/mpeg' => ['mpga', 'mp2', 'mp2a', 'mp3', 'm2a', 'm3a'],
+```
+
+This package will resolve the first match, i.e. `mpga` as the format type. If you want to override this extension, you can do the following...
+
 ### In the controller
 
 ```php
@@ -203,7 +213,7 @@ class UserController
 
         return UserResponse::make(['query' => $query])
             ->withFormatOverrides([
-                'text/csv' => 'xlsx',
+                'audio/mpeg' => 'mp3',
             ]);
     }
 }
@@ -215,14 +225,14 @@ class UserController
 class UserResponse extends Response
 {
     protected $formatOverrides = [
-        'text/csv' => 'xlsx',
+        'audio/mpeg' => 'mp3',
     ];
 
     // ...
 }
 ```
 
-The above would result in `toXlsxResponse` being called if the Accept header is `text/csv`.
+The above would result in `toMp3Response` being called if the Accept header is `audio/mpeg`.
 
 ## Routing
 
