@@ -2,6 +2,7 @@
 
 namespace TiMacDonald\MultiFormat;
 
+use Illuminate\Http\Request;
 use Symfony\Component\Mime\MimeTypes;
 
 class MimeExtension
@@ -23,9 +24,9 @@ class MimeExtension
         $this->mimeTypes = new MimeTypes;
     }
 
-    public function find(array $contentTypes): ?string
+    public function parse(Request $request): ?string
     {
-        foreach ($contentTypes as $contentType) {
+        foreach ($request->getAcceptableContentTypes() as $contentType) {
             $extension = $this->getOverride($contentType) ?? $this->getExtension($contentType);
 
             if ($extension !== null) {
@@ -33,7 +34,7 @@ class MimeExtension
             }
         }
 
-        return null;
+        return $request->format(null);
     }
 
     private function getExtension(string $contentType): ?string

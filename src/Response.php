@@ -3,10 +3,9 @@
 namespace TiMacDonald\MultiFormat;
 
 use Exception;
-use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
-use Symfony\Component\Mime\MimeTypes;
+use Illuminate\Http\Request;
+use Illuminate\Container\Container;
 use Illuminate\Contracts\Support\Responsable;
 
 class Response implements Responsable
@@ -58,47 +57,19 @@ class Response implements Responsable
      */
     public function toResponse($request)
     {
-        return app()->call([$this, $this->responseMethod($request)], [
+        return Container::getInstance()->call([$this, $this->responseMethod($request)], [
             'request' => $request,
         ]);
     }
 
     private function responseMethod(Request $request): string
     {
-        return 'to'.Str::studly($this->contentType($request)).'Response';
+        return 'to'.Str::studly($this->extension($request)).'Response';
     }
 
-    private function contentType(Request $request): string
+    private function extension(Request $request): string
     {
-        return $this->urlContentType($request)
-            ?? $this->acceptHeaderType($request)
-            ?? $this->defaultFormat;
-    }
-
-    private function acceptHeaderType(Request $request) : ?string
-    {
-        return (new MimeExtension($this->formatOverrides))->find(
-            $request->getAcceptableContentTypes()
-        ) ?? $request->format(null);
-    }
-
-    private function urlContentType(Request $request): ?string
-    {
-        return $this->extension($this->filename($request));
-    }
-
-    private function extension(string $filename): ?string
-    {
-        if (! Str::contains($filename, '.')) {
-            return null;
-        }
-
-        return Arr::last(explode('.', $filename));
-    }
-
-    private function filename(Request $request): string
-    {
-        return Arr::last(explode('/', $request->path()));
+        return (new Extension($this->formatOverrides))->parse($request, $this->defaultFormat);
     }
 
     /**
