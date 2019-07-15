@@ -1,4 +1,4 @@
-# Multi-format Response Object for Laravel
+# Multiformat response object for Laravel
 
 [![Total Downloads](https://poser.pugx.org/timacdonald/multiformat-response-objects/downloads)](https://packagist.org/packages/timacdonald/multiformat-response-objects) [![License](https://poser.pugx.org/timacdonald/multiformat-response-objects/license)](https://packagist.org/packages/timacdonald/multiformat-response-objects)
 
@@ -156,7 +156,7 @@ In order to support a format, you create a `to{Format}Response` method, where `{
 - HTML: `toHtmlResponse()`
 - XLSX: `toXlsxResponse()`
 
-### Dependency Injection
+### Dependency injection
 
 As mentioned previously, the format method will be called by the container, allowing you to resolve **format specific dependencies** from the container. As seen in the basic usage example, the html format has no dependencies, however the csv format has a `CsvWriter` dependency.
 
@@ -279,7 +279,7 @@ class UserResponse extends Response
 return new UserResponse($query);
 ```
 
-## The Journey
+## The journey
 
 You've read the readme, you've seen the code, now read the journey. If you wanna see how I came to this solution, you can read my blog post: https://timacdonald.me/versatile-response-objects-laravel/. Warning: it's a bit of a rant.
 
