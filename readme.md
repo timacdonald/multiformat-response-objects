@@ -279,6 +279,10 @@ class UserResponse extends Response
 return new UserResponse($query);
 ```
 
+## Coming soon
+
+- Handling of API versioning
+
 ## The journey
 
 You've read the readme, you've seen the code, now read the journey. If you wanna see how I came to this solution, you can read my blog post: https://timacdonald.me/versatile-response-objects-laravel/. Warning: it's a bit of a rant.
