@@ -17,6 +17,8 @@ $ composer require timacdonald/multiformat-response-objects
 This package is designed to help if you have ever created two different controllers just to provide different formats (HTML / JSON) but the controllers have a lot of shared logic, or if you have ever created a controller that looks like this...
 
 ```php
+<?php
+
 class UserController
 {
     public function index(Request $request, CsvWriter $csvWriter)
@@ -69,6 +71,8 @@ This package cleans up this style of controller. Let me show you how...
 The first step to refactoring the controller is to replace the format specific logic with the response object. You will no doubt do this step last, but I think it is easier to demonstrate it this way.
 
 ```php
+<?php
+
 class UserController
 {
     public function index(Request $request, CsvWriter $csvWriter, )
@@ -91,6 +95,8 @@ In order to support a particular response format, you need to add a correspondin
 You can type hint these methods and the dependencies will be resolved from the container. In our example we are supporting HTML and CSV formats.
 
 ```php
+<?php
+
 use TiMacDonald\MultiFormat\Response;
 
 class UserResponse extends Response
@@ -167,6 +173,8 @@ It is possible to set a default response format, either from the calling control
 ### In the controller
 
 ```php
+<?php
+
 class UserController
 {
     public function index()
@@ -182,6 +190,8 @@ class UserController
 ### In the response object
 
 ```php
+<?php
+
 class UserResponse extends Response
 {
     protected $defaultFormat = 'csv';
@@ -197,6 +207,8 @@ If there is a situation where the mime type you want to support is not being con
 Look at `audio/mpeg` for example. There are several extensions associated with this content type.
 
 ```php
+<?php
+
 'audio/mpeg' => ['mpga', 'mp2', 'mp2a', 'mp3', 'm2a', 'm3a'],
 ```
 
@@ -205,6 +217,8 @@ This package will resolve the first match, i.e. `mpga` as the format type. If yo
 ### In the controller
 
 ```php
+<?php
+
 class UserController
 {
     public function index()
@@ -222,6 +236,8 @@ class UserController
 ### In the response object
 
 ```php
+<?php
+
 class UserResponse extends Response
 {
     protected $formatOverrides = [
@@ -239,6 +255,8 @@ The above would result in `toMp3Response` being called if the Accept header is `
 If you are wanting to embrace file extensions as a way of specifying response formats, you should explicilty specify the allowed formats in your routes file. This package does not provide any routing helpers (yet), but here is an example of how you can do it currently.
 
 ```php
+<?php
+
 Route::get('users{extension?}', [
     'as' => 'users.index',
     'uses' => 'UserController@index',
@@ -261,6 +279,8 @@ This route will be able to respond to the following urls and formats in the resp
 That's cool. Not everyone loves it. You don't have to use the `make` method. Just add your own contructor and set your class attributes as you like!
 
 ```php
+<?php
+
 class UserResponse extends Response
 {
     /**
