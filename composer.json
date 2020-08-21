@@ -1,13 +1,13 @@
 {
     "name": "timacdonald/multiformat-response-objects",
     "description": "A response object that handles multiple response formats within the one controller",
-    "license": "MIT",
     "keywords": [
         "multiformat",
         "responsable",
         "response objects",
         "laravel"
     ],
+    "license": "MIT",
     "authors": [
         {
             "name": "Tim MacDonald",
@@ -17,13 +17,21 @@
     ],
     "require": {
         "php": "^7.2",
-        "illuminate/support": "5.8.*",
         "illuminate/http": "5.8.*",
+        "illuminate/support": "5.8.*",
         "symfony/mime": "^4.3"
     },
     "require-dev": {
+        "ergebnis/composer-normalize": "^2.7",
+        "infection/infection": "^0.17.2",
+        "orchestra/testbench": "^3.5",
+        "phpstan/phpstan": "^0.12.38",
         "phpunit/phpunit": "^8.0",
-        "orchestra/testbench": "^3.5"
+        "vimeo/psalm": "^3.14"
+    },
+    "config": {
+        "preferred-install": "dist",
+        "sort-packages": true
     },
     "autoload": {
         "psr-4": {
@@ -34,5 +42,31 @@
         "psr-4": {
             "Tests\\": "tests/"
         }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "scripts": {
+        "fix": [
+            "clear",
+            "@composer normalize",
+            "./vendor/bin/php-cs-fixer fix"
+        ],
+        "lint": [
+            "clear",
+            "@composer normalize --dry-run",
+            "./vendor/bin/php-cs-fixer fix --dry-run",
+            "./vendor/bin/psalm --threads=8",
+            "./vendor/bin/phpstan analyse"
+        ],
+        "test": [
+            "clear",
+            "./vendor/bin/phpunit",
+            "./vendor/bin/infection --threads=8"
+        ]
+    },
+    "support": {
+        "issues": "https://github.com/timacdonald/multiformat-response-objects/issues",
+        "source": "https://github.com/timacdonald/multiformat-response-objects/releases/latest",
+        "docs": "https://github.com/timacdonald/multiformat-response-objects/blob/master/readme.md"
     }
 }
