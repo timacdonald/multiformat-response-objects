@@ -1,49 +1,53 @@
 <?php
 
-namespace TiMacDonald\MultiFormat;
+namespace TiMacDonald\Multiformat;
 
 use Illuminate\Http\Request;
-use Symfony\Component\Mime\MimeTypes;
+use Illuminate\Support\Collection;
+use Symfony\Component\Mime\MimeTypes as Guesser;
+use TiMacDonald\Multiformat\Contracts\ExtensionGuesser;
 
-class MimeExtension
+class MimeExtension implements ExtensionGuesser
 {
-    /**
-     * @var array
-     */
-    private $overrides;
-
     /**
      * @var \Symfony\Component\Mime\MimeTypes
      */
+    private $guesser;
+
+    /**
+     * @var \TiMacDonald\Multiformat\MimeTypes
+     */
     private $mimeTypes;
 
-    public function __construct(array $overrides = [])
+    public function __construct(Guesser $guesser, MimeTypes $mimeTypes)
     {
-        $this->overrides = $overrides;
+        $this->guesser = $guesser;
 
-        $this->mimeTypes = new MimeTypes;
+        $this->mimeTypes = $mimeTypes;
     }
 
-    public function parse(Request $request): ?string
+    public function guess(Request $request): ?string
     {
-        foreach ($request->getAcceptableContentTypes() as $contentType) {
-            $extension = $this->getOverride($contentType) ?? $this->getExtension($contentType);
+        $extension = Collection::make($request->getAcceptableContentTypes())
+            ->map(function (string $contentType): ?string {
+                return $this->findContentTypeExtension($contentType);
+            })->first(function (?string $extension): bool {
+                return $extension !== null;
+            });
 
-            if ($extension !== null) {
-                return $extension;
-            }
+        if ($extension === null) {
+            return null;
         }
 
-        return $request->format(null);
+        assert(is_string($extension));
+
+        return $extension;
     }
 
-    private function getExtension(string $contentType): ?string
+    private function findContentTypeExtension(string $contentType): ?string
     {
-        return $this->mimeTypes->getExtensions($contentType)[0] ?? null;
-    }
-
-    private function getOverride(string $contentType): ?string
-    {
-        return $this->overrides[$contentType] ?? null;
+        return $this->mimeTypes->value()[$contentType] ??
+            $this->guesser->getExtensions($contentType)[0] ??
+            null;
     }
 }

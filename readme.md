@@ -97,7 +97,7 @@ You can type hint these methods and the dependencies will be resolved from the c
 ```php
 <?php
 
-use TiMacDonald\MultiFormat\Response;
+use TiMacDonald\Multiformat\Response;
 
 class UserResponse extends Response
 {

@@ -1,33 +1,47 @@
 <?php
 
-namespace TiMacDonald\MultiFormat;
+namespace TiMacDonald\Multiformat;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use TiMacDonald\Multiformat\Contracts\Extension as ExtensionContract;
+use TiMacDonald\Multiformat\Contracts\ExtensionGuesser;
 
-class Extension
+class Extension implements ExtensionContract
 {
     /**
-     * @var array
+     * @var \TiMacDonald\Multiformat\Contracts\ExtensionGuesser[]
      */
-    private $formatOverrides;
+    private $guessers;
 
-    public function __construct(array $formatOverrides = [])
+    /**
+     * @var \TiMacDonald\Multiformat\FallbackExtension
+     */
+    private $fallbackExtension;
+
+    /**
+     * @param \TiMacDonald\Multiformat\Contracts\ExtensionGuesser[] $guessers
+     */
+    public function __construct(array $guessers, FallbackExtension $fallbackExtension)
     {
-        $this->formatOverrides = $formatOverrides;
+        $this->guessers = $guessers;
+
+        $this->fallbackExtension = $fallbackExtension;
     }
 
-    public function parse(Request $request): ?string
+    public function parse(Request $request, ?FallbackExtension $fallbackExtension): string
     {
-        return $this->urlExtension($request) ?? $this->acceptHeaderExtension($request);
-    }
+        $extension = Collection::make($this->guessers)
+            ->merge([
+                new ExplicitExtension($fallbackExtension ? $fallbackExtension->value() : null),
+                new ExplicitExtension($this->fallbackExtension->value()),
+            ])
+            ->reduce(function (?string $carry, ExtensionGuesser $guesser) use ($request): ?string {
+                return $carry ?? $guesser->guess($request);
+            }, null);
 
-    private function acceptHeaderExtension(Request $request) : ?string
-    {
-        return (new MimeExtension($this->formatOverrides))->parse($request);
-    }
+        assert(is_string($extension));
 
-    private function urlExtension(Request $request): ?string
-    {
-        return (new UrlExtension)->parse($request);
+        return $extension;
     }
 }

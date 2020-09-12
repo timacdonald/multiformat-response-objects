@@ -33,9 +33,16 @@
         "preferred-install": "dist",
         "sort-packages": true
     },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "TiMacDonald\\Multiformat\\MultiformatResponseServiceProvider"
+            ]
+        }
+    },
     "autoload": {
         "psr-4": {
-            "TiMacDonald\\MultiFormat\\": "src"
+            "TiMacDonald\\Multiformat\\": "src"
         }
     },
     "autoload-dev": {
