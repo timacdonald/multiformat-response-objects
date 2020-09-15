@@ -1,8 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace TiMacDonald\Multiformat;
 
-class MimeTypes
+class CustomMimeTypes
 {
     /**
      * @var string[]
@@ -12,7 +14,7 @@ class MimeTypes
     /**
      * @param string[] $value
      */
-    public function __construct(array $value)
+    public function __construct(array $value = [])
     {
         $this->value = $value;
     }

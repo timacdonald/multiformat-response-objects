@@ -1,10 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests;
 
-use Illuminate\Contracts\Support\Responsable;
 use TiMacDonald\Multiformat\BaseMultiformatResponse;
-use TiMacDonald\Multiformat\Multiformat;
 
 /**
  * @property string $property

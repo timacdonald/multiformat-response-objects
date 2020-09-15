@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace TiMacDonald\Multiformat\Contracts;
 
 use Illuminate\Http\Request;

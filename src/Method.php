@@ -1,10 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace TiMacDonald\Multiformat;
 
+use function assert;
 use Exception;
-use Illuminate\Http\Request;
+use function get_class;
 use Illuminate\Support\Str;
+use function is_callable;
+use function method_exists;
 
 class Method
 {

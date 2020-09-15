@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace TiMacDonald\Multiformat;
 
+use function assert;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\ServiceProvider;
@@ -11,15 +14,11 @@ class MultiformatResponseServiceProvider extends ServiceProvider implements Defe
 {
     public function register(): void
     {
-        $this->app->singleton(FallbackExtension::class, function (): FallbackExtension {
+        $this->app->singleton(FallbackExtension::class, static function (): FallbackExtension {
             return new FallbackExtension('html');
         });
 
-        $this->app->singleton(MimeTypes::class, function (): MimeTypes {
-            return new MimeTypes([]);
-        });
-
-        $this->app->bind(ExtensionContract::class, function (Application $app): ExtensionContract {
+        $this->app->bind(ExtensionContract::class, static function (Application $app): ExtensionContract {
             $urlExtension = $app->make(UrlExtension::class);
             $mimeExtension = $app->make(MimeExtension::class);
             $fallbackExtension = $app->make(FallbackExtension::class);
@@ -30,7 +29,7 @@ class MultiformatResponseServiceProvider extends ServiceProvider implements Defe
 
             return new Extension([
                 $urlExtension,
-                $mimeExtension
+                $mimeExtension,
             ], $fallbackExtension);
         });
     }
@@ -38,7 +37,6 @@ class MultiformatResponseServiceProvider extends ServiceProvider implements Defe
     public function provides()
     {
         return [
-            MimeTypes::class,
             FallbackExtension::class,
             ExtensionContract::class,
         ];

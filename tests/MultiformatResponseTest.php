@@ -1,22 +1,28 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests;
 
+use function assert;
 use Exception;
 use Illuminate\Config\Repository;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use function is_string;
 use Orchestra\Testbench\TestCase;
+use stdClass;
 use TiMacDonald\Multiformat\BaseMultiformatResponse;
-use TiMacDonald\Multiformat\MimeExtension;
+use TiMacDonald\Multiformat\FallbackExtension;
 use TiMacDonald\Multiformat\MimeTypes;
 use TiMacDonald\Multiformat\Multiformat;
 use TiMacDonald\Multiformat\MultiformatResponseServiceProvider;
-use TiMacDonald\Multiformat\Response;
-use stdClass;
 
+/**
+ * @small
+ */
 class MultiformatResponseTest extends TestCase
 {
     protected function setUp(): void
@@ -33,35 +39,35 @@ class MultiformatResponseTest extends TestCase
         ];
     }
 
-    public function test_can_instantiate_instance_with_make_and_data_is_available(): void
+    public function testCanInstantiateInstanceWithMakeAndDataIsAvailable(): void
     {
         $instance = TestResponse::make(['property' => 'expected']);
 
         $this->assertSame('expected', $instance->property);
     }
 
-    public function test_can_add_data_using_with_and_retrieve_with_magic_get(): void
+    public function testCanAddDataUsingWithAndRetrieveWithMagicGet(): void
     {
-        $instance = (new TestResponse)->with(['property' => 'expected value']);
+        $instance = (new TestResponse())->with(['property' => 'expected value']);
 
         $this->assertSame('expected value', $instance->property);
     }
 
-    public function test_access_to_non_existent_attribute_throws_exception(): void
+    public function testAccessToNonExistentAttributeThrowsException(): void
     {
         $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Accessing undefined attribute Tests\TestResponse::not_set');
+        $this->expectExceptionMessage('Accessing undefined attribute Tests\\TestResponse::not_set');
 
         /**
          * @psalm-suppress UndefinedMagicPropertyFetch
          * @phpstan-ignore-next-line
          */
-        (new TestResponse)->not_set;
+        (new TestResponse())->not_set;
     }
 
-    public function test_with_merges_data(): void
+    public function testWithMergesData(): void
     {
-        $instance = new TestResponse;
+        $instance = new TestResponse();
         $instance->with(['property_1' => 'expected value 1']);
         $instance->with(['property_2' => 'expected value 2']);
 
@@ -69,19 +75,19 @@ class MultiformatResponseTest extends TestCase
         $this->assertSame('expected value 2', $instance->property_2);
     }
 
-    public function test_with_overrides_when_passing_duplicate_key(): void
+    public function testWithOverridesWhenPassingDuplicateKey(): void
     {
-        $instance = new TestResponse;
+        $instance = new TestResponse();
         $instance->with(['property' => 'first']);
         $instance->with(['property' => 'second']);
 
         $this->assertSame('second', $instance->property);
     }
 
-    public function test_is_defaults_to_html_format(): void
+    public function testIsDefaultsToHtmlFormat(): void
     {
-        Route::get('location', function (): Responsable {
-            return new TestResponse;
+        Route::get('location', static function (): Responsable {
+            return new TestResponse();
         });
 
         $response = $this->get('location');
@@ -90,10 +96,10 @@ class MultiformatResponseTest extends TestCase
         $this->assertSame('expected html response', $response->content());
     }
 
-    public function test_responds_to_extension_in_the_route(): void
+    public function testRespondsToExtensionInTheRoute(): void
     {
-        Route::get('location.csv', function (): Responsable {
-            return new TestResponse;
+        Route::get('location.csv', static function (): Responsable {
+            return new TestResponse();
         });
 
         $response = $this->get('location.csv');
@@ -102,10 +108,10 @@ class MultiformatResponseTest extends TestCase
         $this->assertSame('expected csv response', $response->content());
     }
 
-    public function test_responds_to_accept_header(): void
+    public function testRespondsToAcceptHeader(): void
     {
-        Route::get('location', function (): Responsable {
-            return new TestResponse;
+        Route::get('location', static function (): Responsable {
+            return new TestResponse();
         });
 
         $response = $this->get('location', [
@@ -116,10 +122,10 @@ class MultiformatResponseTest extends TestCase
         $this->assertSame('expected json response', $response->content());
     }
 
-    public function test_responds_to_first_matching_accepts_header(): void
+    public function testRespondsToFirstMatchingAcceptsHeader(): void
     {
-        Route::get('location', function (): Responsable {
-            return new TestResponse;
+        Route::get('location', static function (): Responsable {
+            return new TestResponse();
         });
 
         $response = $this->get('location', [
@@ -130,10 +136,10 @@ class MultiformatResponseTest extends TestCase
         $this->assertSame('expected csv response', $response->content());
     }
 
-    public function test_responds_to_a_more_obscure_accept_header(): void
+    public function testRespondsToAMoreObscureAcceptHeader(): void
     {
-        Route::get('location', function (): Responsable {
-            return new TestResponse;
+        Route::get('location', static function (): Responsable {
+            return new TestResponse();
         });
 
         $response = $this->get('location', [
@@ -144,10 +150,10 @@ class MultiformatResponseTest extends TestCase
         $this->assertSame('expected xlsx response', $response->content());
     }
 
-    public function test_last_dot_segement_is_used_as_the_extension_type(): void
+    public function testLastDotSegementIsUsedAsTheExtensionType(): void
     {
-        Route::get('websites/{domain}{format}', function (): Responsable {
-            return new TestResponse;
+        Route::get('websites/{domain}{format}', static function (): Responsable {
+            return new TestResponse();
         })->where('format', '.json');
 
         $response = $this->get('websites/timacdonald.me.json');
@@ -156,10 +162,10 @@ class MultiformatResponseTest extends TestCase
         $this->assertSame('expected json response', $response->content());
     }
 
-    public function test_file_extension_takes_precendence_over_accept_header(): void
+    public function testFileExtensionTakesPrecendenceOverAcceptHeader(): void
     {
-        Route::get('location{format}', function (): Responsable {
-            return new TestResponse;
+        Route::get('location{format}', static function (): Responsable {
+            return new TestResponse();
         });
 
         $response = $this->get('location.csv', [
@@ -170,11 +176,11 @@ class MultiformatResponseTest extends TestCase
         $this->assertSame('expected csv response', $response->content());
     }
 
-    public function test_root_domain_returns_html_by_default(): void
+    public function testRootDomainReturnsHtmlByDefault(): void
     {
         $this->config()->set('app.url', 'http://timacdonald.me');
-        Route::get('', function (): Responsable {
-            return new TestResponse;
+        Route::get('', static function (): Responsable {
+            return new TestResponse();
         });
 
         $response = $this->get('');
@@ -183,11 +189,11 @@ class MultiformatResponseTest extends TestCase
         $this->assertSame('expected html response', $response->content());
     }
 
-    public function test_root_domain_response_to_other_formats(): void
+    public function testRootDomainResponseToOtherFormats(): void
     {
         $this->config()->set('app.url', 'http://timacdonald.me');
-        Route::get('.csv', function (): Responsable {
-            return new TestResponse;
+        Route::get('.csv', static function (): Responsable {
+            return new TestResponse();
         });
 
         $response = $this->get('.csv');
@@ -196,10 +202,10 @@ class MultiformatResponseTest extends TestCase
         $this->assertSame('expected csv response', $response->content());
     }
 
-    public function test_query_string_has_no_impact(): void
+    public function testQueryStringHasNoImpact(): void
     {
-        Route::get('location', function (): Responsable {
-            return new TestResponse;
+        Route::get('location', static function (): Responsable {
+            return new TestResponse();
         });
 
         $response = $this->get('location?format=.csv');
@@ -208,11 +214,12 @@ class MultiformatResponseTest extends TestCase
         $this->assertSame('expected html response', $response->content());
     }
 
-    public function test_container_passes_request_into_format_methods(): void
+    public function testContainerPassesRequestIntoFormatMethods(): void
     {
-        Route::get('location.csv', function (): Responsable {
+        Route::get('location.csv', static function (): Responsable {
             return new class() extends BaseMultiformatResponse {
-                public function toCsvResponse(Request $request): string {
+                public function toCsvResponse(Request $request): string
+                {
                     $query = $request->query('parameter');
 
                     assert(is_string($query));
@@ -228,16 +235,18 @@ class MultiformatResponseTest extends TestCase
         $this->assertSame('expected value', $response->content());
     }
 
-    public function test_container_resolves_dependencies_in_format_methods(): void
+    public function testContainerResolvesDependenciesInFormatMethods(): void
     {
-        $this->app->bind(stdClass::class, function () {
-            $instance = new stdClass;
+        $this->app->bind(stdClass::class, static function () {
+            $instance = new stdClass();
             $instance->property = 'expected value';
+
             return $instance;
         });
-        Route::get('location.csv', function (): Responsable {
+        Route::get('location.csv', static function (): Responsable {
             return new class() extends BaseMultiformatResponse {
-                public function toCsvResponse(stdClass $stdClass): string {
+                public function toCsvResponse(stdClass $stdClass): string
+                {
                     assert(is_string($stdClass->property));
 
                     return $stdClass->property;
@@ -251,9 +260,9 @@ class MultiformatResponseTest extends TestCase
         $this->assertSame('expected value', $response->content());
     }
 
-    public function test_can_set_default_response_format(): void
+    public function testCanSetDefaultResponseFormat(): void
     {
-        Route::get('location', function (): Responsable {
+        Route::get('location', static function (): Responsable {
             return TestResponse::make()->withFallbackExtension('csv');
         });
 
@@ -263,21 +272,21 @@ class MultiformatResponseTest extends TestCase
         $this->assertSame('expected csv response', $response->content());
     }
 
-    public function test_exception_is_throw_if_no_response_method_exists(): void
+    public function testExceptionIsThrowIfNoResponseMethodExists(): void
     {
-        $this->expectExceptionMessage('Method Tests\TestResponse::toMp3Response() does not exist');
+        $this->expectExceptionMessage('Method Tests\\TestResponse::toMp3Response() does not exist');
 
-        Route::get('location{format}', function (): Responsable {
-            return new TestResponse;
+        Route::get('location{format}', static function (): Responsable {
+            return new TestResponse();
         });
 
         $this->get('location.mp3');
     }
 
-    public function test_url_html_format_is_used_when_the_default_has_another_value(): void
+    public function testUrlHtmlFormatIsUsedWhenTheDefaultHasAnotherValue(): void
     {
-        Route::get('location{format}', function (): Responsable {
-            return (new TestResponse)->withFallbackExtension('csv');
+        Route::get('location{format}', static function (): Responsable {
+            return (new TestResponse())->withFallbackExtension('csv');
         });
 
         $response = $this->get('location.html');
@@ -286,13 +295,13 @@ class MultiformatResponseTest extends TestCase
         $this->assertSame('expected html response', $response->content());
     }
 
-    public function test_can_override_formats(): void
+    public function testCanOverrideFormats(): void
     {
-        $this->app->singleton(MimeTypes::class, function (Application $app): MimeTypes {
+        $this->app->singleton(MimeTypes::class, static function (Application $app): MimeTypes {
             return new MimeTypes(['text/csv' => 'json']);
         });
-        Route::get('location', function (): Responsable {
-            return (new TestResponse);
+        Route::get('location', static function (): Responsable {
+            return new TestResponse();
         });
 
         $response = $this->get('location', ['Accept' => 'text/csv']);
@@ -301,13 +310,14 @@ class MultiformatResponseTest extends TestCase
         $this->assertSame('expected json response', $response->content());
     }
 
-    public function test_untyped_request_variable_is_passed_through(): void
+    public function testUntypedRequestVariableIsPassedThrough(): void
     {
-        Route::get('location.csv', function (): Responsable {
+        Route::get('location.csv', static function (): Responsable {
             return new class() extends BaseMultiformatResponse {
                 use Multiformat;
 
-                public function toCsvResponse($response): string {
+                public function toCsvResponse($response): string
+                {
                     return $response->input('query');
                 }
             };
@@ -316,6 +326,21 @@ class MultiformatResponseTest extends TestCase
         $response = $this->get('location.csv?query=expected query');
 
         $this->assertSame('expected query', $response->content());
+    }
+
+    public function testOverridingFallbackExtensionGlobally(): void
+    {
+        $this->app->bind(FallbackExtension::class, static function (): FallbackExtension {
+            return new FallbackExtension('json');
+        });
+        Route::get('location', static function (): Responsable {
+            return new TestResponse();
+        });
+
+        $response = $this->get('location');
+
+        $response->assertOk();
+        $this->assertSame('expected json response', $response->content());
     }
 
     private function config(): Repository
@@ -327,4 +352,3 @@ class MultiformatResponseTest extends TestCase
         return $config;
     }
 }
-

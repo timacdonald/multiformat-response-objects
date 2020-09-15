@@ -1,13 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace TiMacDonald\Multiformat;
 
+use function app;
+use function array_key_exists;
+use function array_merge;
 use Exception;
-use Illuminate\Container\Container;
-use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
-use ReflectionClass;
 use TiMacDonald\Multiformat\Contracts\Extension;
 
 trait Multiformat
@@ -25,19 +25,19 @@ trait Multiformat
     /**
      * @return static
      */
-    public static function make(array $data = [])
+    public static function make(array $data): self
     {
         /**
          * @psalm-suppress UnsafeInstantiation
          * @phpstan-ignore-next-line
          */
-        return (new static)->with($data);
+        return (new static())->with($data);
     }
 
     /**
      * @return static
      */
-    public function with(array $data)
+    public function with(array $data): self
     {
         $this->data = array_merge($this->data, $data);
 
@@ -47,7 +47,7 @@ trait Multiformat
     /**
      * @return static
      */
-    public function withFallbackExtension(string $extension)
+    public function withFallbackExtension(string $extension): self
     {
         $this->fallbackExtension = $extension;
 
@@ -58,7 +58,8 @@ trait Multiformat
      * @psalm-suppress MixedInferredReturnType
      *
      * @param \Illuminate\Http\Request $request
-     * @return \Symfony\Component\HttpFoundation\Response
+     *
+     * @return mixed
      */
     public function toResponse($request)
     {
