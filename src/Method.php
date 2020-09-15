@@ -7,18 +7,33 @@ namespace TiMacDonald\Multiformat;
 use function assert;
 use Exception;
 use function get_class;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use function is_callable;
 use function method_exists;
+use TiMacDonald\Multiformat\Contracts\Extension;
+use TiMacDonald\Multiformat\ApiFallbackExtension;
 
 class Method
 {
-    public function parse(object $response, string $extension): callable
+    /**
+     * @var Extension
+     */
+    private $extension;
+
+    public function __construct(Extension $extension)
     {
-        return $this->method($response, $this->name($response, $extension));
+        $this->extension = $extension;
     }
 
-    private function method(object $response, string $name): callable
+    public function parse(Request $request, object $response, ApiFallbackExtension $fallbackExtension): callable
+    {
+        $extension = $this->extension->parse($request) ?? $fallbackExtension->value();
+
+        return self::method($response, self::name($response, $extension));
+    }
+
+    private static function method(object $response, string $name): callable
     {
         $method = [$response, $name];
 
@@ -27,7 +42,7 @@ class Method
         return $method;
     }
 
-    private function name(object $response, string $extension): string
+    private static function name(object $response, string $extension): string
     {
         $name = 'to'.Str::studly($extension).'Response';
 

@@ -14,9 +14,9 @@ use Illuminate\Support\Facades\Route;
 use function is_string;
 use Orchestra\Testbench\TestCase;
 use stdClass;
+use TiMacDonald\Multiformat\ApiFallbackExtension;
 use TiMacDonald\Multiformat\BaseMultiformatResponse;
-use TiMacDonald\Multiformat\FallbackExtension;
-use TiMacDonald\Multiformat\MimeTypes;
+use TiMacDonald\Multiformat\CustomMimeTypes;
 use TiMacDonald\Multiformat\Multiformat;
 use TiMacDonald\Multiformat\MultiformatResponseServiceProvider;
 
@@ -263,7 +263,7 @@ class MultiformatResponseTest extends TestCase
     public function testCanSetDefaultResponseFormat(): void
     {
         Route::get('location', static function (): Responsable {
-            return TestResponse::make()->withFallbackExtension('csv');
+            return TestResponse::make([])->withApiFallbackExtension('csv');
         });
 
         $response = $this->get('location', ['Accept' => null]);
@@ -286,7 +286,7 @@ class MultiformatResponseTest extends TestCase
     public function testUrlHtmlFormatIsUsedWhenTheDefaultHasAnotherValue(): void
     {
         Route::get('location{format}', static function (): Responsable {
-            return (new TestResponse())->withFallbackExtension('csv');
+            return (new TestResponse())->withApiFallbackExtension('csv');
         });
 
         $response = $this->get('location.html');
@@ -297,8 +297,8 @@ class MultiformatResponseTest extends TestCase
 
     public function testCanOverrideFormats(): void
     {
-        $this->app->singleton(MimeTypes::class, static function (Application $app): MimeTypes {
-            return new MimeTypes(['text/csv' => 'json']);
+        $this->app->singleton(CustomMimeTypes::class, static function (Application $app): CustomMimeTypes {
+            return new CustomMimeTypes(['text/csv' => 'json']);
         });
         Route::get('location', static function (): Responsable {
             return new TestResponse();
@@ -328,16 +328,16 @@ class MultiformatResponseTest extends TestCase
         $this->assertSame('expected query', $response->content());
     }
 
-    public function testOverridingFallbackExtensionGlobally(): void
+    public function testOverridingFallbackExtensionGloballyForApis(): void
     {
-        $this->app->bind(FallbackExtension::class, static function (): FallbackExtension {
-            return new FallbackExtension('json');
+        $this->app->bind(ApiFallbackExtension::class, static function (): ApiFallbackExtension {
+            return new ApiFallbackExtension('json');
         });
         Route::get('location', static function (): Responsable {
             return new TestResponse();
         });
 
-        $response = $this->get('location');
+        $response = $this->get('location', ['Accept' => null]);
 
         $response->assertOk();
         $this->assertSame('expected json response', $response->content());

@@ -9,23 +9,32 @@ use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\ServiceProvider;
 use TiMacDonald\Multiformat\Contracts\Extension as ExtensionContract;
+use TiMacDonald\Multiformat\ApiFallbackExtension;
 
 class MultiformatResponseServiceProvider extends ServiceProvider implements DeferrableProvider
 {
     public function register(): void
     {
-        $this->app->singleton(FallbackExtension::class, static function (): FallbackExtension {
-            return new FallbackExtension('html');
+        $this->app->bind(CustomMimeTypes::class, static function (): CustomMimeTypes {
+            return new CustomMimeTypes([]);
+        });
+
+        $this->app->bind(ApiFallbackExtension::class, static function (): ApiFallbackExtension {
+            return new ApiFallbackExtension('html');
+        });
+
+        $this->app->bind(UrlExtension::class, static function (): UrlExtension {
+            return new UrlExtension([]);
         });
 
         $this->app->bind(ExtensionContract::class, static function (Application $app): ExtensionContract {
             $urlExtension = $app->make(UrlExtension::class);
             $mimeExtension = $app->make(MimeExtension::class);
-            $fallbackExtension = $app->make(FallbackExtension::class);
+            $fallbackExtension = $app->make(ApiFallbackExtension::class);
 
             assert($urlExtension instanceof UrlExtension);
             assert($mimeExtension instanceof MimeExtension);
-            assert($fallbackExtension instanceof FallbackExtension);
+            assert($fallbackExtension instanceof ApiFallbackExtension);
 
             return new Extension([
                 $urlExtension,
@@ -37,7 +46,7 @@ class MultiformatResponseServiceProvider extends ServiceProvider implements Defe
     public function provides()
     {
         return [
-            FallbackExtension::class,
+            ApiFallbackExtension::class,
             ExtensionContract::class,
         ];
     }

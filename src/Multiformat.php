@@ -8,14 +8,13 @@ use function app;
 use function array_key_exists;
 use function array_merge;
 use Exception;
-use TiMacDonald\Multiformat\Contracts\Extension;
 
 trait Multiformat
 {
     /**
-     * @var ?string
+     * @var ?\TiMacDonald\Multiformat\ApiFallbackExtension
      */
-    protected $fallbackExtension;
+    private $apiFallbackExtension;
 
     /**
      * @var mixed[]
@@ -25,7 +24,7 @@ trait Multiformat
     /**
      * @return static
      */
-    public static function make(array $data): self
+    public static function make(array $data)
     {
         /**
          * @psalm-suppress UnsafeInstantiation
@@ -37,7 +36,7 @@ trait Multiformat
     /**
      * @return static
      */
-    public function with(array $data): self
+    public function with(array $data)
     {
         $this->data = array_merge($this->data, $data);
 
@@ -47,9 +46,9 @@ trait Multiformat
     /**
      * @return static
      */
-    public function withFallbackExtension(string $extension): self
+    public function withApiFallbackExtension(string $extension)
     {
-        $this->fallbackExtension = $extension;
+        $this->apiFallbackExtension = new ApiFallbackExtension($extension);
 
         return $this;
     }
@@ -63,12 +62,11 @@ trait Multiformat
      */
     public function toResponse($request)
     {
-        $extension = app(Extension::class)->parse(
+        $method = app(Method::class)->parse(
             $request,
-            $this->fallbackExtension ? new FallbackExtension($this->fallbackExtension) : null
+            $this,
+            $this->apiFallbackExtension ?? app(ApiFallbackExtension::class)
         );
-
-        $method = app(Method::class)->parse($this, $extension);
 
         return app()->call($method, ['request' => $request]);
     }

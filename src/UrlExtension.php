@@ -22,7 +22,7 @@ class UrlExtension implements ExtensionGuesser
     /**
      * @param string[] $formatOverrides
      */
-    public function __construct(array $formatOverrides = [])
+    public function __construct(array $formatOverrides)
     {
         $this->formatOverrides = $formatOverrides;
     }

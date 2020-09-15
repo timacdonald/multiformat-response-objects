@@ -14,7 +14,7 @@ class CustomMimeTypes
     /**
      * @param string[] $value
      */
-    public function __construct(array $value = [])
+    public function __construct(array $value)
     {
         $this->value = $value;
     }
