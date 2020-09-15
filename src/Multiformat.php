@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace TiMacDonald\Multiformat;
 
-use function app;
 use function array_key_exists;
 use function array_merge;
+use function assert;
 use Exception;
+use Illuminate\Contracts\Support\Responsable;
+use Illuminate\Foundation\Application;
 
 trait Multiformat
 {
@@ -58,17 +60,32 @@ trait Multiformat
      *
      * @param \Illuminate\Http\Request $request
      *
-     * @return mixed
+     * @return \Symfony\Component\HttpFoundation\Response
      */
     public function toResponse($request)
     {
-        $method = app(Method::class)->parse(
-            $request,
-            $this,
-            $this->apiFallbackExtension ?? app(ApiFallbackExtension::class)
-        );
+        $app = Application::getInstance();
 
-        return app()->call($method, ['request' => $request]);
+        $method = $app->make(Method::class);
+        assert($method instanceof Method);
+
+        $fallback = $this->apiFallbackExtension;
+
+        if ($fallback === null) {
+            $fallback = $app->make(ApiFallbackExtension::class);
+
+            assert($fallback instanceof ApiFallbackExtension);
+        }
+
+        $callable = $method->parse($request, $this, $fallback);
+
+        $response = $app->call($callable, ['request' => $request]);
+
+        while ($response instanceof Responsable) {
+            $response = $response->toResponse($request);
+        }
+
+        return $response;
     }
 
     /**

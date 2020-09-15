@@ -6,12 +6,10 @@ namespace TiMacDonald\Multiformat;
 
 use function assert;
 use Illuminate\Contracts\Foundation\Application;
-use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\ServiceProvider;
 use TiMacDonald\Multiformat\Contracts\Extension as ExtensionContract;
-use TiMacDonald\Multiformat\ApiFallbackExtension;
 
-class MultiformatResponseServiceProvider extends ServiceProvider implements DeferrableProvider
+class MultiformatResponseServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
@@ -39,15 +37,7 @@ class MultiformatResponseServiceProvider extends ServiceProvider implements Defe
             return new Extension([
                 $urlExtension,
                 $mimeExtension,
-            ], $fallbackExtension);
+            ]);
         });
-    }
-
-    public function provides()
-    {
-        return [
-            ApiFallbackExtension::class,
-            ExtensionContract::class,
-        ];
     }
 }

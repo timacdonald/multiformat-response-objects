@@ -7,12 +7,13 @@ namespace Tests;
 use function assert;
 use Exception;
 use Illuminate\Config\Repository;
-use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Route;
 use function is_string;
 use Orchestra\Testbench\TestCase;
+use function response;
 use stdClass;
 use TiMacDonald\Multiformat\ApiFallbackExtension;
 use TiMacDonald\Multiformat\BaseMultiformatResponse;
@@ -260,7 +261,7 @@ class MultiformatResponseTest extends TestCase
         $this->assertSame('expected value', $response->content());
     }
 
-    public function testCanSetDefaultResponseFormat(): void
+    public function testCanSetDefaultResponseFormatForApis(): void
     {
         Route::get('location', static function (): Responsable {
             return TestResponse::make([])->withApiFallbackExtension('csv');
@@ -283,13 +284,13 @@ class MultiformatResponseTest extends TestCase
         $this->get('location.mp3');
     }
 
-    public function testUrlHtmlFormatIsUsedWhenTheDefaultHasAnotherValue(): void
+    public function testUrlHtmlFormatIsUsedWhenTheDefaultHasAnotherValueForApis(): void
     {
         Route::get('location{format}', static function (): Responsable {
             return (new TestResponse())->withApiFallbackExtension('csv');
         });
 
-        $response = $this->get('location.html');
+        $response = $this->get('location.html', ['Accept' => null]);
 
         $response->assertOk();
         $this->assertSame('expected html response', $response->content());
@@ -297,7 +298,7 @@ class MultiformatResponseTest extends TestCase
 
     public function testCanOverrideFormats(): void
     {
-        $this->app->singleton(CustomMimeTypes::class, static function (Application $app): CustomMimeTypes {
+        $this->app->bind(CustomMimeTypes::class, static function (): CustomMimeTypes {
             return new CustomMimeTypes(['text/csv' => 'json']);
         });
         Route::get('location', static function (): Responsable {
@@ -316,9 +317,13 @@ class MultiformatResponseTest extends TestCase
             return new class() extends BaseMultiformatResponse {
                 use Multiformat;
 
-                public function toCsvResponse($response): string
+                public function toCsvResponse(Request $request): string
                 {
-                    return $response->input('query');
+                    $query = $request->input('query');
+
+                    assert(is_string($query));
+
+                    return $query;
                 }
             };
         });
@@ -341,6 +346,35 @@ class MultiformatResponseTest extends TestCase
 
         $response->assertOk();
         $this->assertSame('expected json response', $response->content());
+    }
+
+    public function testItCanReturnNestedResponsables(): void
+    {
+        Route::get('location', static function (): Responsable {
+            return new class() implements Responsable {
+                use Multiformat;
+
+                public function toHtmlResponse(): Responsable
+                {
+                    return new class() implements Responsable {
+                        /**
+                         * @param \Illuminate\Http\Request $request
+                         *
+                         * @return \Symfony\Component\HttpFoundation\Response
+                         */
+                        public function toResponse($request)
+                        {
+                            return new Response('expected from nexted');
+                        }
+                    };
+                }
+            };
+        });
+
+        $response = $this->get('location');
+
+        $response->assertOk();
+        $this->assertSame('expected from nexted', $response->content());
     }
 
     private function config(): Repository

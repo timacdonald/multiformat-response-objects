@@ -12,7 +12,6 @@ use Illuminate\Support\Str;
 use function is_callable;
 use function method_exists;
 use TiMacDonald\Multiformat\Contracts\Extension;
-use TiMacDonald\Multiformat\ApiFallbackExtension;
 
 class Method
 {
