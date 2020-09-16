@@ -19,7 +19,7 @@
         "php": "^7.2",
         "illuminate/http": "5.8.*",
         "illuminate/support": "5.8.*",
-        "symfony/mime": "^4.3"
+        "symfony/mime": "^5.1"
     },
     "require-dev": {
         "ergebnis/composer-normalize": "^2.7",
