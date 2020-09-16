@@ -38,6 +38,14 @@ trait Multiformat
     /**
      * @return static
      */
+    public static function new(...$params)
+    {
+        return new static(...$params);
+    }
+
+    /**
+     * @return static
+     */
     public function with(array $data)
     {
         $this->data = array_merge($this->data, $data);
@@ -59,23 +67,16 @@ trait Multiformat
      * @psalm-suppress MixedInferredReturnType
      *
      * @param \Illuminate\Http\Request $request
-     *
-     * @return \Symfony\Component\HttpFoundation\Response
      */
-    public function toResponse($request)
+    public function toResponse($request): \Symfony\Component\HttpFoundation\Response
     {
         $app = Application::getInstance();
 
         $method = $app->make(Method::class);
         assert($method instanceof Method);
 
-        $fallback = $this->apiFallbackExtension;
-
-        if ($fallback === null) {
-            $fallback = $app->make(ApiFallbackExtension::class);
-
-            assert($fallback instanceof ApiFallbackExtension);
-        }
+        $fallback = $this->apiFallbackExtension ?? $app->make(ApiFallbackExtension::class);
+        assert($fallback instanceof ApiFallbackExtension);
 
         $callable = $method->parse($request, $this, $fallback);
 

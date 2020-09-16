@@ -8,6 +8,11 @@
         "text": "infection.log"
     },
     "mutators": {
-        "@default": true
+        "@default": true,
+        "InstanceOf_": {
+            "ignore": [
+                "*"
+            ]
+        }
     }
 }

@@ -215,11 +215,14 @@ class MultiformatResponseTest extends TestCase
         $this->assertSame('expected html response', $response->content());
     }
 
-    public function testContainerPassesRequestIntoFormatMethods(): void
+    public function testContainerPassesRequestIntoFormatMethodsWithoutTypehiting(): void
     {
         Route::get('location.csv', static function (): Responsable {
             return new class() extends BaseMultiformatResponse {
-                public function toCsvResponse(Request $request): string
+                /**
+                 * @param \Illuminate\Http\Request $request
+                 */
+                public function toCsvResponse($request): string
                 {
                     $query = $request->query('parameter');
 
@@ -359,10 +362,8 @@ class MultiformatResponseTest extends TestCase
                     return new class() implements Responsable {
                         /**
                          * @param \Illuminate\Http\Request $request
-                         *
-                         * @return \Symfony\Component\HttpFoundation\Response
                          */
-                        public function toResponse($request)
+                        public function toResponse($request): \Symfony\Component\HttpFoundation\Response
                         {
                             return new Response('expected from nexted');
                         }
@@ -375,6 +376,21 @@ class MultiformatResponseTest extends TestCase
 
         $response->assertOk();
         $this->assertSame('expected from nexted', $response->content());
+    }
+
+    public function testUnknownMimeTypesFallback(): void
+    {
+        $this->app->bind(ApiFallbackExtension::class, static function (): ApiFallbackExtension {
+            return new ApiFallbackExtension('csv');
+        });
+        Route::get('location', static function () {
+            return new TestResponse();
+        });
+
+        $response = $this->get('location', ['Accept' => 'unknown/mime']);
+
+        $response->assertOk();
+        $this->assertSame('expected csv response', $response->content());
     }
 
     private function config(): Repository
