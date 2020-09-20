@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests;
 
 use function assert;
+use Closure;
 use Exception;
 use Illuminate\Config\Repository;
 use Illuminate\Contracts\Support\Responsable;
@@ -15,7 +16,7 @@ use function is_string;
 use Orchestra\Testbench\TestCase;
 use function response;
 use stdClass;
-use TiMacDonald\Multiformat\ApiFallbackExtension;
+use TiMacDonald\Multiformat\ApiFallback;
 use TiMacDonald\Multiformat\BaseMultiformatResponse;
 use TiMacDonald\Multiformat\CustomMimeTypes;
 use TiMacDonald\Multiformat\Multiformat;
@@ -225,7 +226,6 @@ class MultiformatResponseTest extends TestCase
                 public function toCsvResponse($request): string
                 {
                     $query = $request->query('parameter');
-
                     assert(is_string($query));
 
                     return $query;
@@ -267,7 +267,7 @@ class MultiformatResponseTest extends TestCase
     public function testCanSetDefaultResponseFormatForApis(): void
     {
         Route::get('location', static function (): Responsable {
-            return TestResponse::make([])->withApiFallbackExtension('csv');
+            return TestResponse::make([])->withApiFallback('csv');
         });
 
         $response = $this->get('location', ['Accept' => null]);
@@ -290,7 +290,7 @@ class MultiformatResponseTest extends TestCase
     public function testUrlHtmlFormatIsUsedWhenTheDefaultHasAnotherValueForApis(): void
     {
         Route::get('location{format}', static function (): Responsable {
-            return (new TestResponse())->withApiFallbackExtension('csv');
+            return (new TestResponse())->withApiFallback('csv');
         });
 
         $response = $this->get('location.html', ['Accept' => null]);
@@ -338,8 +338,10 @@ class MultiformatResponseTest extends TestCase
 
     public function testOverridingFallbackExtensionGloballyForApis(): void
     {
-        $this->app->bind(ApiFallbackExtension::class, static function (): ApiFallbackExtension {
-            return new ApiFallbackExtension('json');
+        $this->app->bind(ApiFallback::class, static function (): Closure {
+            return static function (Request $request, object $response) {
+                return [$response, 'toJsonResponse'];
+            };
         });
         Route::get('location', static function (): Responsable {
             return new TestResponse();
@@ -380,8 +382,10 @@ class MultiformatResponseTest extends TestCase
 
     public function testUnknownMimeTypesFallback(): void
     {
-        $this->app->bind(ApiFallbackExtension::class, static function (): ApiFallbackExtension {
-            return new ApiFallbackExtension('csv');
+        $this->app->bind(ApiFallback::class, static function (): Closure {
+            return static function (Request $request, object $response): callable {
+                return [$response, 'toCsvResponse'];
+            };
         });
         Route::get('location', static function () {
             return new TestResponse();

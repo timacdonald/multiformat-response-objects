@@ -9,21 +9,18 @@ class CustomMimeTypes
     /**
      * @var string[]
      */
-    private $value;
+    private $mimeTypes;
 
     /**
-     * @param string[] $value
+     * @param string[] $mimeTypes
      */
-    public function __construct(array $value)
+    public function __construct(array $mimeTypes)
     {
-        $this->value = $value;
+        $this->mimeTypes = $mimeTypes;
     }
 
-    /**
-     * @return string[]
-     */
-    public function value(): array
+    public function find(string $mimeType): ?string
     {
-        return $this->value;
+        return $this->mimeTypes[$mimeType] ?? null;
     }
 }

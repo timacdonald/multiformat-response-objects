@@ -5,45 +5,47 @@ declare(strict_types=1);
 namespace TiMacDonald\Multiformat;
 
 use function assert;
+
+use Closure;
 use Exception;
 use function get_class;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use function is_callable;
 use function method_exists;
-use TiMacDonald\Multiformat\Contracts\Extension;
 
 class Method
 {
     /**
-     * @var Extension
+     * @var Type
      */
-    private $extension;
+    private $type;
 
-    public function __construct(Extension $extension)
+    public function __construct(Type $type)
     {
-        $this->extension = $extension;
+        $this->type = $type;
     }
 
-    public function parse(Request $request, object $response, ApiFallbackExtension $fallbackExtension): callable
+    public function callback(Request $request, object $response): ?Closure
     {
-        $extension = $this->extension->parse($request) ?? $fallbackExtension->value();
+        $type = $this->type->check($request);
 
-        return self::method($response, self::name($response, $extension));
+        if ($type === null) {
+            return null;
+        }
+
+        return function (Request $request, object $response) use ($type): callable {
+            $method = [$response, $this->name($response, $type)];
+
+            assert(is_callable($method));
+
+            return $method;
+        };
     }
 
-    private static function method(object $response, string $name): callable
+    public function name(object $response, string $type): string
     {
-        $method = [$response, $name];
-
-        assert(is_callable($method));
-
-        return $method;
-    }
-
-    private static function name(object $response, string $extension): string
-    {
-        $name = 'to'.Str::studly($extension).'Response';
+        $name = 'to'.Str::studly($type).'Response';
 
         if (! method_exists($response, $name)) {
             throw new Exception('Method '.get_class($response).'::'.$name.'() does not exist');

@@ -9,9 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use function is_string;
 use Symfony\Component\Mime\MimeTypes as Guesser;
-use TiMacDonald\Multiformat\Contracts\ExtensionGuesser;
 
-class MimeExtension implements ExtensionGuesser
+class MimeExtension
 {
     /**
      * @var \Symfony\Component\Mime\MimeTypes
@@ -30,27 +29,27 @@ class MimeExtension implements ExtensionGuesser
         $this->mimeTypes = $mimeTypes;
     }
 
-    public function guess(Request $request): ?string
+    public function __invoke(Request $request): ?string
     {
-        $extension = Collection::make($request->getAcceptableContentTypes())
+        $type = Collection::make($request->getAcceptableContentTypes())
             ->map(function (string $contentType): ?string {
-                return $this->findContentTypeExtension($contentType);
-            })->first(static function (?string $extension): bool {
-                return $extension !== null;
+                return $this->determineType($contentType);
+            })->first(static function (?string $type): bool {
+                return $type !== null;
             });
 
-        if ($extension === null) {
+        if ($type === null) {
             return null;
         }
 
-        assert(is_string($extension));
+        assert(is_string($type));
 
-        return $extension;
+        return $type;
     }
 
-    private function findContentTypeExtension(string $contentType): ?string
+    protected function determineType(string $contentType): ?string
     {
-        return $this->mimeTypes->value()[$contentType] ??
+        return $this->mimeTypes->find($contentType) ??
             $this->guesser->getExtensions($contentType)[0] ??
             null;
     }

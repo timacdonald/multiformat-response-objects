@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace TiMacDonald\Multiformat;
 
 use function assert;
+
+use Closure;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Http\Request;
 use Illuminate\Support\ServiceProvider;
-use TiMacDonald\Multiformat\Contracts\Extension as ExtensionContract;
+use function is_callable;
 
 class MultiformatResponseServiceProvider extends ServiceProvider
 {
@@ -17,27 +20,24 @@ class MultiformatResponseServiceProvider extends ServiceProvider
             return new CustomMimeTypes([]);
         });
 
-        $this->app->bind(ApiFallbackExtension::class, static function (): ApiFallbackExtension {
-            return new ApiFallbackExtension('html');
+        $this->app->bind(ApiFallback::class, static function (Application $app): Closure {
+            return static function (Request $request, object $response) use ($app): callable {
+                $method = $app->make(Method::class);
+
+                assert($method instanceof Method);
+
+                return [$response, $method->name($response, 'html')];
+            };
         });
 
-        $this->app->bind(UrlExtension::class, static function (): UrlExtension {
-            return new UrlExtension([]);
-        });
-
-        $this->app->bind(ExtensionContract::class, static function (Application $app): ExtensionContract {
+        $this->app->bind(Type::class, static function (Application $app): Type {
             $urlExtension = $app->make(UrlExtension::class);
+            assert(is_callable($urlExtension));
+
             $mimeExtension = $app->make(MimeExtension::class);
-            $fallbackExtension = $app->make(ApiFallbackExtension::class);
+            assert(is_callable($mimeExtension));
 
-            assert($urlExtension instanceof UrlExtension);
-            assert($mimeExtension instanceof MimeExtension);
-            assert($fallbackExtension instanceof ApiFallbackExtension);
-
-            return new Extension([
-                $urlExtension,
-                $mimeExtension,
-            ]);
+            return new Type([$urlExtension, $mimeExtension]);
         });
     }
 }

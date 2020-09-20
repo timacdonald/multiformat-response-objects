@@ -10,24 +10,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use function is_string;
-use TiMacDonald\Multiformat\Contracts\ExtensionGuesser;
 
-class UrlExtension implements ExtensionGuesser
+class UrlExtension
 {
-    /**
-     * @var string[]
-     */
-    private $formatOverrides;
-
-    /**
-     * @param string[] $formatOverrides
-     */
-    public function __construct(array $formatOverrides)
-    {
-        $this->formatOverrides = $formatOverrides;
-    }
-
-    public function guess(Request $request): ?string
+    public function __invoke(Request $request): ?string
     {
         $filename = Arr::last(explode('/', $request->path()));
 
