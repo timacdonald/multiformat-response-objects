@@ -6,7 +6,7 @@ namespace TiMacDonald\Multiformat;
 
 use Illuminate\Contracts\Support\Responsable;
 
-class BaseMultiformatResponse implements Responsable
+class BaseSuperResponse implements Responsable
 {
-    use Multiformat;
+    use SuperResponse;
 }

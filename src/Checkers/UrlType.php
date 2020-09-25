@@ -2,18 +2,21 @@
 
 declare(strict_types=1);
 
-namespace TiMacDonald\Multiformat;
+namespace TiMacDonald\Multiformat\Checkers;
 
 use function assert;
+
 use function explode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use function is_string;
 
-class UrlExtension
+use TiMacDonald\Multiformat\ResponseType;
+
+class UrlType
 {
-    public function __invoke(Request $request): ?string
+    public function __invoke(Request $request): ?ResponseType
     {
         $filename = Arr::last(explode('/', $request->path()));
 
@@ -23,10 +26,10 @@ class UrlExtension
             return null;
         }
 
-        $extension = Arr::last(explode('.', $filename));
+        $type = Arr::last(explode('.', $filename));
 
-        assert(is_string($extension));
+        assert(is_string($type));
 
-        return $extension;
+        return new ResponseType($type);
     }
 }

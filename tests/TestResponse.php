@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Tests;
 
-use TiMacDonald\Multiformat\BaseMultiformatResponse;
+use TiMacDonald\Multiformat\BaseSuperResponse;
 
 /**
  * @property string $property
  * @property string $property_1
  * @property string $property_2
  */
-class TestResponse extends BaseMultiformatResponse
+class TestResponse extends BaseSuperResponse
 {
     public function toHtmlResponse(): string
     {

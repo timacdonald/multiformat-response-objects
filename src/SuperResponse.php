@@ -9,19 +9,25 @@ use function array_merge;
 
 use function assert;
 use Closure;
+
 use Exception;
 use Illuminate\Contracts\Support\Responsable;
-
 use Illuminate\Foundation\Application;
 use function is_callable;
-use function is_string;
+use TiMacDonald\Multiformat\Contracts\TypeCheck;
+use TiMacDonald\Multiformat\Contracts\TypeToCallback;
 
-trait Multiformat
+trait SuperResponse
 {
     /**
-     * @var Closure|string|null
+     * @var Closure|null
      */
-    private $apiFallback;
+    private $localFallback;
+
+    /**
+     * @var mixed[]
+     */
+    private $typeCheckers = [];
 
     /**
      * @var mixed[]
@@ -64,13 +70,21 @@ trait Multiformat
     }
 
     /**
-     * @param Closure|string $type
+     * @return static
+     */
+    public function withTypeCheckers(array $typeCheckers)
+    {
+        $this->typeCheckers = array_merge($this->typeCheckers, $typeCheckers);
+    }
+
+    /**
+     * @param mixed $callback
      *
      * @return static
      */
-    public function withApiFallback($type)
+    public function withApiFallback($callback)
     {
-        $this->apiFallback = $type;
+        $this->localFallback = $callback;
 
         return $this;
     }
@@ -85,21 +99,19 @@ trait Multiformat
     public function toResponse($request)
     {
         $app = Application::getInstance();
+        $typeToCallback = $app->make(TypeToCallback::class);
+        assert(is_callable($typeToCallback));
+        $typeCheck = $app->make(TypeCheck::class);
+        assert(is_callable($typeCheck));
 
-        $method = $app->make(Method::class);
-        assert($method instanceof Method);
+        $responseType = $typeCheck($request, $this->typeCheckers);
+        assert($responseType instanceof ResponseType);
 
-        $callback = $method->callback($request, $this) ?? $this->apiFallback ?? $app->make(ApiFallback::class);
+        $callback = $responseType->isKnown()
+            ? $typeToCallback($responseType)
+            : ($this->localFallback ?? $app->make(ApiFallback::class));
 
-        if (! is_callable($callback)) {
-            assert(is_string($callback));
-
-            $callback = function () use ($method, $callback): callable {
-                return [$this, $method->name($this, $callback)];
-            };
-        }
-
-        $response = $app->call($callback($request, $this), ['request' => $request]);
+        $response = $app->call($callback($this), ['request' => $request]);
 
         while ($response instanceof Responsable) {
             $response = $response->toResponse($request);

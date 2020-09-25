@@ -1,5 +1,19 @@
 # Multiformat response object for Laravel
 
+        // nested responses, one that handles the type, and nested on that handles
+        // the verison.
+        // non-nested. Both type and version in one (composable checkers, i.e. type
+        // and verison form the base checkers)
+        // add a version checker URL and HEADER options (see what header Stripe uses and use that)
+        // add a prepareResponse method and prepareFinalResponse method (as it
+        // will recusrsibly check for more responses). This will allow you to return
+        // array data for verioned json responses and then use prepare response to actually
+        // wrap the response data up.
+        //
+        // call is Laravel Super Response
+        //
+        //
+
 [![Total Downloads](https://poser.pugx.org/timacdonald/multiformat-response-objects/downloads)](https://packagist.org/packages/timacdonald/multiformat-response-objects) [![License](https://poser.pugx.org/timacdonald/multiformat-response-objects/license)](https://packagist.org/packages/timacdonald/multiformat-response-objects)
 
 In some situations you may want to support multiple return formats (HTML, JSON, CSV, XLSX) for the one endpoint and controller. This package gives you a base class that helps you return different formats of the same data. It supports specifying the return format as a file extension or as an `Accept` header. It also allows you to have shared and format specific logic, all while sharing the same route and controller.

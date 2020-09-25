@@ -16,11 +16,11 @@ use function is_string;
 use Orchestra\Testbench\TestCase;
 use function response;
 use stdClass;
-use TiMacDonald\Multiformat\ApiFallback;
-use TiMacDonald\Multiformat\BaseMultiformatResponse;
-use TiMacDonald\Multiformat\CustomMimeTypes;
-use TiMacDonald\Multiformat\Multiformat;
-use TiMacDonald\Multiformat\MultiformatResponseServiceProvider;
+use TiMacDonald\Multiformat\BaseSuperResponse;
+use TiMacDonald\Multiformat\Contracts\ApiFallback;
+use TiMacDonald\Multiformat\MimeMap;
+use TiMacDonald\Multiformat\SuperResponse;
+use TiMacDonald\Multiformat\SuperResponseServiceProvider;
 
 /**
  * @small
@@ -37,7 +37,7 @@ class MultiformatResponseTest extends TestCase
     protected function getPackageProviders($app)
     {
         return [
-            MultiformatResponseServiceProvider::class,
+            SuperResponseServiceProvider::class,
         ];
     }
 
@@ -219,7 +219,7 @@ class MultiformatResponseTest extends TestCase
     public function testContainerPassesRequestIntoFormatMethodsWithoutTypehiting(): void
     {
         Route::get('location.csv', static function (): Responsable {
-            return new class() extends BaseMultiformatResponse {
+            return new class() extends BaseSuperResponse {
                 /**
                  * @param \Illuminate\Http\Request $request
                  */
@@ -248,7 +248,7 @@ class MultiformatResponseTest extends TestCase
             return $instance;
         });
         Route::get('location.csv', static function (): Responsable {
-            return new class() extends BaseMultiformatResponse {
+            return new class() extends BaseSuperResponse {
                 public function toCsvResponse(stdClass $stdClass): string
                 {
                     assert(is_string($stdClass->property));
@@ -301,8 +301,8 @@ class MultiformatResponseTest extends TestCase
 
     public function testCanOverrideFormats(): void
     {
-        $this->app->bind(CustomMimeTypes::class, static function (): CustomMimeTypes {
-            return new CustomMimeTypes(['text/csv' => 'json']);
+        $this->app->bind(MimeMap::class, static function (): MimeMap {
+            return new MimeMap(['text/csv' => 'json']);
         });
         Route::get('location', static function (): Responsable {
             return new TestResponse();
@@ -317,8 +317,8 @@ class MultiformatResponseTest extends TestCase
     public function testUntypedRequestVariableIsPassedThrough(): void
     {
         Route::get('location.csv', static function (): Responsable {
-            return new class() extends BaseMultiformatResponse {
-                use Multiformat;
+            return new class() extends BaseSuperResponse {
+                use SuperResponse;
 
                 public function toCsvResponse(Request $request): string
                 {
@@ -339,7 +339,7 @@ class MultiformatResponseTest extends TestCase
     public function testOverridingFallbackExtensionGloballyForApis(): void
     {
         $this->app->bind(ApiFallback::class, static function (): Closure {
-            return static function (Request $request, object $response) {
+            return static function (object $response) {
                 return [$response, 'toJsonResponse'];
             };
         });
@@ -357,7 +357,7 @@ class MultiformatResponseTest extends TestCase
     {
         Route::get('location', static function (): Responsable {
             return new class() implements Responsable {
-                use Multiformat;
+                use SuperResponse;
 
                 public function toHtmlResponse(): Responsable
                 {
@@ -383,7 +383,7 @@ class MultiformatResponseTest extends TestCase
     public function testUnknownMimeTypesFallback(): void
     {
         $this->app->bind(ApiFallback::class, static function (): Closure {
-            return static function (Request $request, object $response): callable {
+            return static function (object $response): callable {
                 return [$response, 'toCsvResponse'];
             };
         });

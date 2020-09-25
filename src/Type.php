@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace TiMacDonald\Multiformat;
 
-use function assert;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
-use function is_string;
 
 class Type
 {
@@ -24,23 +21,7 @@ class Type
         $this->checkers = $checkers;
     }
 
-    public function check(Request $request): ?string
+    public function check(Request $request, array $typeCheckers = []): ResponseType
     {
-        $type = Collection::make($this->checkers)
-            ->reduce(static function (?string $carry, callable $guesser) use ($request): ?string {
-                $type = $carry ?? $guesser($request);
-
-                assert(is_string($type) || $type === null);
-
-                return $type;
-            }, null);
-
-        if ($type === null) {
-            return null;
-        }
-
-        assert(is_string($type));
-
-        return $type;
     }
 }
