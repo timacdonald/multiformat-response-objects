@@ -33,17 +33,37 @@ class SuperResponseServiceProvider extends ServiceProvider
             };
         });
 
-        $this->app->bind(ApiFallback::class, static function (Application $app): Closure {
-            $method = $app->make(Method::class);
+        $this->app->bind(ApiFallback::class, static function (Application $app): callable {
+            $typeToCallback = $app->make(TypeToCallback::class);
 
-            assert($method instanceof Method);
+            assert(is_callable($typeToCallback));
 
-            return $method->callback(new ResponseType('html'));
+            $callback = $typeToCallback(new ResponseType('html'));
+
+            assert(is_callable($callback));
+
+            return $callback;
         });
 
-        $this->app->bind(TypeCheck::class, static function (): Closure {
-            return static function (Request $request, array $typeCheckers): ResponseType {
+        $this->app->bind(TypeCheck::class, static function (Application $app): Closure {
+            return static function (Request $request, array $typeCheckers) use ($app): ResponseType {
                 $responseType = Collection::make($typeCheckers)
+                    ->map(
+                        /**
+                         * @param callable|string $typeChecker
+                         */
+                        static function ($typeChecker) use ($app): callable {
+                            if (is_callable($typeChecker)) {
+                                return $typeChecker;
+                            }
+
+                            $typeChecker = $app->make($typeChecker);
+
+                            assert(is_callable($typeChecker));
+
+                            return $typeChecker;
+                        }
+                    )
                     ->reduce(static function (ResponseType $carry, callable $guesser) use ($request): ResponseType {
                         return $carry->add((string) $guesser($request));
                     }, ResponseType::makeUnknown());

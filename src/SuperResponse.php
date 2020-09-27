@@ -14,6 +14,8 @@ use Exception;
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Foundation\Application;
 use function is_callable;
+
+use TiMacDonald\Multiformat\Contracts\ApiFallback;
 use TiMacDonald\Multiformat\Contracts\TypeCheck;
 use TiMacDonald\Multiformat\Contracts\TypeToCallback;
 
