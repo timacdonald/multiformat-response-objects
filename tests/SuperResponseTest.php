@@ -8,6 +8,7 @@ use function assert;
 use Closure;
 use Exception;
 use Illuminate\Config\Repository;
+use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -16,7 +17,9 @@ use function is_string;
 use Orchestra\Testbench\TestCase;
 use function response;
 use stdClass;
+use function TestResponse;
 use TiMacDonald\Multiformat\BaseSuperResponse;
+use TiMacDonald\Multiformat\Checkers\UrlContentType;
 use TiMacDonald\Multiformat\Contracts\ApiFallback;
 use TiMacDonald\Multiformat\MimeMap;
 use TiMacDonald\Multiformat\SuperResponse;
@@ -25,8 +28,11 @@ use TiMacDonald\Multiformat\SuperResponseServiceProvider;
 /**
  * @small
  */
-class MultiformatResponseTest extends TestCase
+class SuperResponseTest extends TestCase
 {
+    /**
+     * @throws BindingResolutionException
+     */
     protected function setUp(): void
     {
         parent::setUp();
@@ -41,21 +47,21 @@ class MultiformatResponseTest extends TestCase
         ];
     }
 
-    public function testCanInstantiateInstanceWithMakeAndDataIsAvailable(): void
+    public function testItInstantiatesAnInstanceWithMakeAndDataIsAvailable(): void
     {
         $instance = TestResponse::make(['property' => 'expected']);
 
         $this->assertSame('expected', $instance->property);
     }
 
-    public function testCanAddDataUsingWithAndRetrieveWithMagicGet(): void
+    public function testItAddsDataUsingWithAndRetrieveWithMagicGet(): void
     {
         $instance = (new TestResponse())->with(['property' => 'expected value']);
 
         $this->assertSame('expected value', $instance->property);
     }
 
-    public function testAccessToNonExistentAttributeThrowsException(): void
+    public function testItThrowsExceptionAccessingNonExistentAttributes(): void
     {
         $this->expectException(Exception::class);
         $this->expectExceptionMessage('Accessing undefined attribute Tests\\TestResponse::not_set');
@@ -67,7 +73,7 @@ class MultiformatResponseTest extends TestCase
         (new TestResponse())->not_set;
     }
 
-    public function testWithMergesData(): void
+    public function testItMergesDataUsingWith(): void
     {
         $instance = new TestResponse();
         $instance->with(['property_1' => 'expected value 1']);
@@ -77,7 +83,7 @@ class MultiformatResponseTest extends TestCase
         $this->assertSame('expected value 2', $instance->property_2);
     }
 
-    public function testWithOverridesWhenPassingDuplicateKey(): void
+    public function testItOverridesWhenPassingDuplicateKeyToWith(): void
     {
         $instance = new TestResponse();
         $instance->with(['property' => 'first']);
@@ -86,22 +92,65 @@ class MultiformatResponseTest extends TestCase
         $this->assertSame('second', $instance->property);
     }
 
-    public function testIsDefaultsToHtmlFormat(): void
+    public function testItInjectsArgumentsThroughContructorUsingNew(): void
+    {
+        $instance = TestResponse::new('expected');
+
+        $this->assertSame('expected', $instance->constructorArg);
+    }
+
+    public function testItFallbacksToFallbackMethod(): void
     {
         Route::get('location', static function (): Responsable {
             return new TestResponse();
         });
 
-        $response = $this->get('location');
+        $response = $this->get('location', ['Accept' => null]);
 
         $response->assertOk();
-        $this->assertSame('expected html response', $response->content());
+        $this->assertSame('expected fallback response', $response->content());
     }
 
-    public function testRespondsToExtensionInTheRoute(): void
+    public function testItAllowsRebindingOfFallback(): void
+    {
+        $this->app->bind(ApiFallback::class, static function (): Closure {
+            return static function ($response): array {
+                return [$response, 'toCsvResponse'];
+            };
+        });
+        Route::get('location', static function (): Responsable {
+            return new TestResponse();
+        });
+
+        $response = $this->get('location', ['Accept' => null]);
+
+        $response->assertOk();
+        $this->assertSame('expected csv response', $response->content());
+    }
+
+    public function testItCanRebindFallbackToAnythingUnrelatedToTheResponseObject(): void
+    {
+        $this->app->bind(ApiFallback::class, static function (): Closure {
+            return static function (): Closure {
+                return static function () {
+                    return 'expected random response';
+                };
+            };
+        });
+        Route::get('location', static function (): Responsable {
+            return new TestResponse();
+        });
+
+        $response = $this->get('location', ['Accept' => null]);
+
+        $response->assertOk();
+        $this->assertSame('expected random response', $response->content());
+    }
+
+    public function testItRespondsToExtensionInTheRoute(): void
     {
         Route::get('location.csv', static function (): Responsable {
-            return new TestResponse();
+            return TestResponse::make()->withTypeCheckers([UrlContentType::class]);
         });
 
         $response = $this->get('location.csv');
@@ -267,7 +316,7 @@ class MultiformatResponseTest extends TestCase
     public function testCanSetDefaultResponseFormatForApis(): void
     {
         Route::get('location', static function (): Responsable {
-            return TestResponse::make([])->withApiFallback('csv');
+            return TestResponse::make()->withApiFallback('csv');
         });
 
         $response = $this->get('location', ['Accept' => null]);

@@ -12,11 +12,11 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use function is_string;
 
-use TiMacDonald\Multiformat\ResponseType;
+use TiMacDonald\Multiformat\ResponseTypes;
 
-class UrlType
+class UrlContentType
 {
-    public function __invoke(Request $request): ?ResponseType
+    public function __invoke(Request $request): ?ResponseTypes
     {
         $filename = Arr::last(explode('/', $request->path()));
 
@@ -30,6 +30,6 @@ class UrlType
 
         assert(is_string($type));
 
-        return new ResponseType($type);
+        return new ResponseTypes([$type]);
     }
 }

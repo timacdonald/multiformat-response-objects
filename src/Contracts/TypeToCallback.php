@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace TiMacDonald\Multiformat\Contracts;
 
-use TiMacDonald\Multiformat\ResponseType;
+use Closure;
+use TiMacDonald\Multiformat\ResponseTypes;
 
 interface TypeToCallback
 {
-    public function __invoke(ResponseType $responseType): callable;
+    public function __invoke(ResponseTypes $responseTypes): Closure;
 }

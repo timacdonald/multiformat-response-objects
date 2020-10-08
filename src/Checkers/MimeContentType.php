@@ -10,9 +10,9 @@ use Illuminate\Http\Request;
 use function is_string;
 
 use TiMacDonald\Multiformat\Contracts\MimeToType;
-use TiMacDonald\Multiformat\ResponseType;
+use TiMacDonald\Multiformat\ResponseTypes;
 
-class MimeType
+class MimeContentType
 {
     /**
      * @var \TiMacDonald\Multiformat\Contracts\MimeToType
@@ -24,7 +24,7 @@ class MimeType
         $this->mimeToType = $mimeToType;
     }
 
-    public function __invoke(Request $request): ?ResponseType
+    public function __invoke(Request $request): ?ResponseTypes
     {
         foreach ($request->getAcceptableContentTypes() as $contentType) {
             assert(is_string($contentType));
@@ -32,7 +32,7 @@ class MimeType
             $type = ($this->mimeToType)($contentType);
 
             if ($type !== null) {
-                return new ResponseType($type);
+                return new ResponseTypes([$type]);
             }
         }
 

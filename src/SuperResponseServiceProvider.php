@@ -6,15 +6,14 @@ namespace TiMacDonald\Multiformat;
 
 use function assert;
 use Closure;
-use Exception;
 
-use function get_class;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
+
 use function is_callable;
-use function method_exists;
 use Symfony\Component\Mime\MimeTypes;
 use TiMacDonald\Multiformat\Contracts\ApiFallback;
 use TiMacDonald\Multiformat\Contracts\MimeToType;
@@ -38,7 +37,7 @@ class SuperResponseServiceProvider extends ServiceProvider
 
             assert(is_callable($typeToCallback));
 
-            $callback = $typeToCallback(new ResponseType('html'));
+            $callback = $typeToCallback(new ResponseTypes(['fallback']));
 
             assert(is_callable($callback));
 
@@ -46,8 +45,8 @@ class SuperResponseServiceProvider extends ServiceProvider
         });
 
         $this->app->bind(TypeCheck::class, static function (Application $app): Closure {
-            return static function (Request $request, array $typeCheckers) use ($app): ResponseType {
-                $responseType = Collection::make($typeCheckers)
+            return static function (Request $request, array $typeCheckers) use ($app): ResponseTypes {
+                $responseTypes = Collection::make($typeCheckers)
                     ->map(
                         /**
                          * @param callable|string $typeChecker
@@ -64,30 +63,26 @@ class SuperResponseServiceProvider extends ServiceProvider
                             return $typeChecker;
                         }
                     )
-                    ->reduce(static function (ResponseType $carry, callable $guesser) use ($request): ResponseType {
-                        return $carry->add((string) $guesser($request));
-                    }, ResponseType::makeUnknown());
+                    ->reduce(static function (ResponseTypes $carry, callable $guesser) use ($request): ResponseTypes {
+                        return $carry->add($guesser($request));
+                    }, ResponseTypes::makeUnknown());
 
-                assert($responseType instanceof ResponseType);
+                assert($responseTypes instanceof ResponseTypes);
 
-                return $responseType;
+                return $responseTypes;
             };
         });
 
         $this->app->bind(TypeToCallback::class, static function (): Closure {
-            return static function (ResponseType $responseType): Closure {
-                $name = "to{$responseType->value()}Response";
+            return static function (ResponseTypes $responseTypes): Closure {
+                $name = $responseTypes->value()
+                    ->map(static function (string $type): string {
+                        return Str::ucfirst($type);
+                    })
+                    ->join('');
 
-                return static function (object $response) use ($name): callable {
-                    if (! method_exists($response, $name)) {
-                        throw new Exception('Method '.get_class($response).'::'.$name.'() does not exist');
-                    }
-
-                    $method = [$response, $name];
-
-                    assert(is_callable($method));
-
-                    return $method;
+                return static function (object $response) use ($name): array {
+                    return [$response, "to{$name}Response"];
                 };
             };
         });
