@@ -28,7 +28,7 @@
         "phpstan/phpstan": "^0.12.38",
         "phpunit/phpunit": "^8.0",
         "timacdonald/php-style": "dev-master",
-        "vimeo/psalm": "^3.15"
+        "vimeo/psalm": "^4.0"
     },
     "config": {
         "preferred-install": "dist",
