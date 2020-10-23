@@ -45,9 +45,4 @@ class TestResponse implements Responsable
     {
         return 'expected xlsx response';
     }
-
-    public function toFallbackResponse(): string
-    {
-        return 'expected fallback response';
-    }
 }

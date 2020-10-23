@@ -5,28 +5,27 @@ declare(strict_types=1);
 namespace TiMacDonald\Multiformat;
 
 use function array_key_exists;
-
 use function array_merge;
 use function assert;
-
-use BadMethodCallException;
 use Closure;
 use Exception;
-
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Foundation\Application;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Collection;
 use function is_callable;
 use function method_exists;
-use TiMacDonald\Multiformat\Contracts\ApiFallback;
+use TiMacDonald\Multiformat\Contracts\FallbackResponse;
 use TiMacDonald\Multiformat\Contracts\TypeCheck;
-use TiMacDonald\Multiformat\Contracts\TypeToCallback;
+use TiMacDonald\Multiformat\Contracts\TypesToCallback;
 
 trait SuperResponse
 {
     /**
-     * @var Closure|null
+     * @var callable|mixed
      */
-    private $localFallback;
+    private $fallbackResponse;
 
     /**
      * @var mixed[]
@@ -51,6 +50,8 @@ trait SuperResponse
     }
 
     /**
+     * @param mixed ...$params
+     *
      * @return static
      */
     public static function new(...$params)
@@ -86,9 +87,13 @@ trait SuperResponse
     /**
      * @return static
      */
-    public function withApiFallback(Closure $callback)
+    public function withFallbackResponse(callable $callback)
     {
-        $this->localFallback = $callback;
+        $this->fallbackResponse = static function (Request $request, object $response) use ($callback): Closure {
+            return static function () use ($request, $response, $callback) {
+                return $callback($request, $response);
+            };
+        };
 
         return $this;
     }
@@ -104,24 +109,34 @@ trait SuperResponse
     {
         $app = Application::getInstance();
 
-        $typeToCallback = $app->make(TypeToCallback::class);
+        $typeToCallback = $app->make(TypesToCallback::class);
         assert(is_callable($typeToCallback));
 
         $typeCheck = $app->make(TypeCheck::class);
         assert(is_callable($typeCheck));
 
-        $responseTypes = $typeCheck($request, $this->typeCheckers);
-        assert($responseTypes instanceof ResponseTypes);
+        $options = $typeCheck($request, $this->typeCheckers);
+        assert($options instanceof Collection);
 
-        $callback = $responseTypes->isKnown()
-            ? $typeToCallback($responseTypes)
-            : ($this->localFallback ?? $app->make(ApiFallback::class));
-        assert(is_callable($callback));
+        $callback = null;
 
-        /**
-         * @var mixed
-         */
-        $response = $app->call($callback($this), ['request' => $request]);
+        if ($options->isNotEmpty()) {
+            $callback = $typeToCallback($options)($this);
+        }
+
+        if ($callback === null) {
+            $callback = $this->fallbackResponse ?? $app->make(FallbackResponse::class);
+        }
+
+        if (! is_callable($callback)) {
+            $callback = static function () use ($callback) {
+                return static function () use ($callback) {
+                    return $callback;
+                };
+            };
+        }
+
+        $response = $app->call($callback($request, $this), ['request' => $request]);
 
         // It can be nice to not return responses, but instead return data
         // from your toXXXXResponse methods, for example you may want
@@ -153,36 +168,12 @@ trait SuperResponse
     /**
      * @return mixed
      */
-    protected function resolve(string $method)
-    {
-        return Application::getInstance()->call([$this, $method]);
-    }
-
-    /**
-     * @return mixed
-     */
     public function __get(string $attribute)
     {
-        if (array_key_exists($attribute, $this->data)) {
-            return $this->data[$attribute];
+        if (! array_key_exists($attribute, $this->data)) {
+            throw new Exception('Accessing undefined attribute '.static::class.'::'.$attribute);
         }
 
-        throw new Exception('Accessing undefined attribute '.static::class.'::'.$attribute);
-    }
-
-    /**
-     * @return mixed
-     */
-    public function __call(string $method, array $arguments)
-    {
-        // this allows developers to intercept unknown type calls
-        // in their response class and determine how they would like
-        // to handle it. You can return a response, redirect, or throw
-        // an exception.
-        if (method_exists($this, 'handleUnknownType')) {
-            return $this->handleUnknownType($method);
-        }
-
-        throw new BadMethodCallException('Method '.static::class, '::'.$method.' does not exist.');
+        return $this->data[$attribute];
     }
 }

@@ -5,18 +5,18 @@ declare(strict_types=1);
 namespace TiMacDonald\Multiformat\Checkers;
 
 use function assert;
-
 use function explode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use function is_string;
-
-use TiMacDonald\Multiformat\ResponseTypes;
+use TiMacDonald\Multiformat\ResponseType;
 
 class UrlContentType
 {
-    public function __invoke(Request $request): ?ResponseTypes
+    use Concerns\DetectValidMethodStrings;
+
+    public function __invoke(Request $request): ?ResponseType
     {
         $filename = Arr::last(explode('/', $request->path()));
 
@@ -30,6 +30,10 @@ class UrlContentType
 
         assert(is_string($type));
 
-        return new ResponseTypes([$type]);
+        if (self::doesntContainAnyValidMethodCharacters($type)) {
+            return null;
+        }
+
+        return new ResponseType($type);
     }
 }

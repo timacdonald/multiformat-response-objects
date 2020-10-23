@@ -6,16 +6,19 @@ namespace TiMacDonald\Multiformat;
 
 use Illuminate\Support\Collection;
 
-class ResponseTypes
+class ResponseType
 {
     /**
      * @var array
      */
     private $types;
 
-    public function __construct(array $types)
+    /**
+     * @param array|string $types
+     */
+    public function __construct($types)
     {
-        $this->types = $types;
+        $this->types = (array) $types;
     }
 
     public static function makeUnknown(): self
@@ -35,10 +38,10 @@ class ResponseTypes
 
     public function add(self $type): self
     {
-        return new self($this->value()->merge($type->value())->toArray());
+        return new self($this->options()->merge($type->options())->toArray());
     }
 
-    public function value(): Collection
+    public function options(): Collection
     {
         return Collection::make($this->types);
     }

@@ -22,7 +22,7 @@
     <issueHandlers>
         <PropertyNotSetInConstructor>
             <errorLevel type="suppress">
-                <file name="tests/MultiformatResponseTest.php" />
+                <file name="tests/SuperResponseTest.php" />
             </errorLevel>
         </PropertyNotSetInConstructor>
     </issueHandlers>
