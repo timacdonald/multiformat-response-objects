@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace TiMacDonald\Multiformat\Checkers;
 
 use function assert;
+use function dd;
 use Illuminate\Http\Request;
 use function is_string;
 use TiMacDonald\Multiformat\Contracts\MimeToType;
@@ -27,6 +28,7 @@ class HeaderContentType
     public function __invoke(Request $request): ?ResponseType
     {
         foreach ($request->getAcceptableContentTypes() as $contentType) {
+            dd('here', $contentType);
             assert(is_string($contentType));
 
             $type = ($this->mimeToType)($contentType);

@@ -171,7 +171,7 @@ trait SuperResponse
     public function __get(string $attribute)
     {
         if (! array_key_exists($attribute, $this->data)) {
-            throw new Exception('Accessing undefined attribute '.static::class.'::'.$attribute);
+            throw new Exception('Undefined property: '.static::class.'::'.$attribute);
         }
 
         return $this->data[$attribute];

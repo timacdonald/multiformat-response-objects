@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace TiMacDonald\Multiformat\Functions;
 
-use function app;
-use function assert;
+use Illuminate\Contracts\Container\Container;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use function is_callable;
@@ -14,28 +13,32 @@ use TiMacDonald\Multiformat\ResponseType;
 
 class TypeCheck implements TypeCheckContract
 {
+    /**
+     * @var Container
+     */
+    private $container;
+
+    public function __construct(Container $container)
+    {
+        $this->container = $container;
+    }
+
     public function __invoke(Request $request, array $checkers): Collection
     {
         return Collection::make($checkers)
             ->map(
-                /** @param callable|string $checker */
-                static function ($checker): callable {
-                    if (is_callable($checker)) {
-                        return $checker;
-                    }
+                 /** @param callable|string $checker */
+                 function ($checker): callable {
+                     if (is_callable($checker)) {
+                         return $checker;
+                     }
 
-                    $checker = app()->make($checker);
-
-                    assert(is_callable($checker));
-
-                    return $checker;
-                }
+                     /** @var callable */
+                     return $this->container->make($checker);
+                 }
             )->map(static function (callable $checker) use ($request): ResponseType {
-                $responseTypes = $checker($request);
-
-                assert($responseTypes instanceof ResponseType);
-
-                return $responseTypes;
+                /** @var ResponseType */
+                return $checker($request);
             });
     }
 }
