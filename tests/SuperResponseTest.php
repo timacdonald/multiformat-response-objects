@@ -98,10 +98,12 @@ class SuperResponseTest extends TestCase
         $this->assertSame('second', $instance->property);
     }
 
-    public function testGlobalFallbackReturns406(): void
+    public function testGlobalFallbackReturns406WhenNotImplementingImplicitContract(): void
     {
-        Route::get('location', static function (): TestResponse {
-            return new TestResponse();
+        Route::get('location', static function (): Responsable {
+            return new class() implements Responsable {
+                use SuperResponse;
+            };
         });
 
         $response = $this->get('location', ['Accept' => null]);
@@ -110,17 +112,38 @@ class SuperResponseTest extends TestCase
         $this->assertSame('', $response->content());
     }
 
-    public function testCanRebindGlobalFallback(): void
+    public function testGlobalFallbackReturnsImplicitContract(): void
+    {
+        Route::get('location', static function (): object {
+            return new class() implements Responsable {
+                use SuperResponse;
+
+                public function unsupportedResponse(Request $request): array
+                {
+                    /** @var array */
+                    return $request->query('response');
+                }
+            };
+        });
+
+        $response = $this->get('location?response[expected]=response', ['Accept' => null]);
+
+        $response->assertStatus(200);
+        $response->assertHeader('Content-type', 'application/json');
+        $this->assertSame(['expected' => 'response'], $response->json());
+    }
+
+    public function testCanRebindGlobalFallbackWithCurrying(): void
     {
         $this->app->bind(FallbackResponse::class, static function (): Closure {
             return static function (Request $request, object $response): Closure {
-                return static function () use ($request, $response): string {
-                    /** @var string */
+                return static function () use ($request, $response): array {
+                    /** @var array */
                     $value = $request->query('response');
 
                     assert(method_exists($response, 'someRandomMethod'));
 
-                    /** @var string */
+                    /** @var array */
                     return $response->someRandomMethod($value);
                 };
             };
@@ -129,53 +152,58 @@ class SuperResponseTest extends TestCase
             return new class() implements Responsable {
                 use SuperResponse;
 
-                public function someRandomMethod(string $response): string
+                public function someRandomMethod(array $response): array
                 {
                     return $response;
                 }
             };
         });
 
-        $response = $this->get('location?response=expected response', ['Accept' => null]);
+        $response = $this->get('location?response[expected]=response', ['Accept' => null]);
 
         $response->assertStatus(200);
-        $this->assertSame('expected response', $response->content());
+        $response->assertHeader('Content-type', 'application/json');
+        $this->assertSame(['expected' => 'response'], $response->json());
     }
 
-    public function testCanSetAClassBasedFallbackViaImplicitContract(): void
+    public function testGlobalFallbackCanJustReturnAResponseDirectly(): void
     {
-        Route::get('location', static function (): object {
+        $this->app->bind(FallbackResponse::class, static function (): object {
             return new class() implements Responsable {
-                use SuperResponse;
-
-                public function unsupportedResponse(Request $request): string
+                public function toResponse($request)
                 {
-                    /** @var string */
-                    return $request->query('response');
+                    return ['expected' => 'response'];
                 }
             };
         });
+        Route::get('location', static function (): object {
+            return new class() implements Responsable {
+                use SuperResponse;
+            };
+        });
 
-        $response = $this->get('location?response=expected response', ['Accept' => null]);
+        $response = $this->get('location', ['Accept' => null]);
 
         $response->assertStatus(200);
-        $this->assertSame('expected response', $response->content());
+        $response->assertHeader('Content-type', 'application/json');
+        $this->assertSame(['expected' => 'response'], $response->json());
     }
 
-    public function testCanPassAFallbackClosure(): void
+    public function testCanPassALocalFallback(): void
     {
         Route::get('location', static function (): TestResponse {
             return TestResponse::make()
-                ->withFallbackResponse(static function (Request $request): string {
-                    /** @var string */
+                ->withFallbackResponse(static function (Request $request): array {
+                    /** @var array */
                     return $request->query('response');
                 });
         });
 
-        $response = $this->get('location?response=expected response', ['Accept' => null]);
+        $response = $this->get('location?response[expected]=response', ['Accept' => null]);
 
         $response->assertStatus(200);
-        $this->assertSame('expected response', $response->content());
+        $response->assertHeader('Content-type', 'application/json');
+        $this->assertSame(['expected' => 'response'], $response->json());
     }
 
     public function testPassedClosureCanCallMethodsOnResponseAndGetsRequest(): void
@@ -230,53 +258,6 @@ class SuperResponseTest extends TestCase
                 UrlContentType::class,
             ])->withFallbackResponse(static function (): string {
                 return 'expected response';
-            });
-        });
-
-        $response = $this->get('location.csv', ['Accept' => null]);
-
-        $response->assertStatus(200);
-        $this->assertSame('expected response', $response->content());
-    }
-
-    public function testGlobalFallbackCanJustReturnAResponseDirectly(): void
-    {
-        $this->app->bind(FallbackResponse::class, static function (): object {
-            return new class() implements Responsable {
-                public function toResponse($request)
-                {
-                    return new Response('expected response');
-                }
-            };
-        });
-        Route::get('location.csv', static function (): object {
-            return (new class() implements Responsable {
-                use SuperResponse;
-            })->withTypeCheckers([
-                UrlContentType::class,
-            ]);
-        });
-
-        $response = $this->get('location.csv', ['Accept' => null]);
-
-        $response->assertStatus(200);
-        $this->assertSame('expected response', $response->content());
-    }
-
-    public function testLocalFallbackCanReturnNestedResponsable(): void
-    {
-        Route::get('location.csv', static function (): object {
-            return (new class() implements Responsable {
-                use SuperResponse;
-            })->withTypeCheckers([
-                UrlContentType::class,
-            ])->withFallbackResponse(static function (): object {
-                return new class() implements Responsable {
-                    public function toResponse($request)
-                    {
-                        return new Response('expected response');
-                    }
-                };
             });
         });
 
