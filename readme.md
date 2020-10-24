@@ -209,7 +209,7 @@ class PostResponse
 
 If the Super Response does not implement this implicit contract the fallback will then return a [`406 Not Acceptable`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/406) response.
 
-#### Global fallback customisation
+### Global fallback customisation
 
 The fallback can be completely customised by re-binding the `FallbackResponse` contract to the container in a Service Provider. Here are a few examples of fallback customisations to give you an idea of how it works.
 
