@@ -130,13 +130,19 @@ trait SuperResponse
 
         if (! is_callable($callback)) {
             $callback = static function () use ($callback) {
-                return static function () use ($callback) {
-                    return $callback;
-                };
+                return $callback;
             };
         }
 
-        $response = $app->call($callback($request, $this), ['request' => $request]);
+        $responseMethod = $callback($request, $this);
+
+        if (! is_callable($responseMethod)) {
+            $responseMethod = static function () use ($responseMethod) {
+                return $responseMethod;
+            };
+        }
+
+        $response = $app->call($responseMethod, ['request' => $request]);
 
         // It can be nice to not return responses, but instead return data
         // from your toXXXXResponse methods, for example you may want

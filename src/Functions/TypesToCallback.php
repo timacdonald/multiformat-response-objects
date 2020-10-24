@@ -14,7 +14,7 @@ class TypesToCallback implements TypesToCallbackContract
 {
     public function __invoke(Collection $options): callable
     {
-        $method = $options->map(static function (ResponseType $responseTypes) {
+        $types = $options->map(static function (ResponseType $responseTypes): string {
             return $responseTypes
                 ->options()
                 ->map(static function (string $type): string {
@@ -22,9 +22,9 @@ class TypesToCallback implements TypesToCallbackContract
                     return Str::ucfirst($type);
                 })
                 ->join('');
-        })->map(static function (string $name): string {
-            return "to{$name}Response";
         });
+
+        $method = "to{$types->join('')}Response";
 
         return static function (object $response) use ($method): ?callable {
             if (! method_exists($response, $method)) {
