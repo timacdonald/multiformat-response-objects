@@ -1,9 +1,9 @@
 ## Table of contents
 
 - [Passing data to a Super Response](#passing-data-to-a-super-response)
-  - [Via static `make` constructor (magic)](#via-static-make-constructor-(magic))
-  - [Via static `new` constructor (slightly magic)](#via-static-new-constructor-(slightly-magic))
-  - [Via standard constructor (no magic)](#via-standard-constructor-(no-magic))
+  - [Via static `make` constructor (magic)](#via-static-make-constructor-magic)
+  - [Via static `new` constructor (slightly magic)](#via-static-new-constructor-slightly-magic)
+  - [Via standard constructor (no magic)](#via-standard-constructor-no-magic)
 - [Fallback response](#fallback-response)
   - [Global fallback out of the box](#global-fallback-out-of-the-box)
   - [Global fallback customisation](#global-fallback-customisation)
