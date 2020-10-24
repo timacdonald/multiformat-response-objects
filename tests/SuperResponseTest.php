@@ -48,32 +48,65 @@ class SuperResponseTest extends TestCase
 
     public function testItInstantiatesAnInstanceWithMakeAndDataIsAvailableViaMagicGet(): void
     {
-        $instance = TestResponse::make(['property' => 'expected']);
+        $instance = (new class() implements Responsable {
+            use SuperResponse;
+        })::make(['property' => 'expected']);
 
+        /**
+         * @psalm-suppress UndefinedMagicPropertyFetch
+         * @phpstan-ignore-next-line
+         */
         $this->assertSame('expected', $instance->property);
     }
 
     public function testItAddsDataUsingWithAndIsAvailableViaMagicGet(): void
     {
-        $instance = (new TestResponse())->with(['property' => 'expected value']);
+        $instance = (new class() implements Responsable {
+            use SuperResponse;
+        })->with(['property' => 'expected value']);
 
+        /**
+         * @psalm-suppress UndefinedMagicPropertyFetch
+         * @phpstan-ignore-next-line
+         */
         $this->assertSame('expected value', $instance->property);
     }
 
     public function testItInjectsArgumentsThroughContructorUsingNew(): void
     {
-        $instance = TestResponse::new('expected');
+        $instance = (new class('') implements Responsable {
+            use SuperResponse;
 
-        $this->assertSame('expected', $instance->constructorArg);
+            public string $value;
+
+            public function __construct(string $value)
+            {
+                $this->value = $value;
+            }
+        })::new('expected');
+
+        $this->assertSame('expected', $instance->value);
     }
 
     public function testItMergesDataUsingWith(): void
     {
-        $instance = new TestResponse();
-        $instance->with(['property_1' => 'expected value 1'])
-            ->with(['property_2' => 'expected value 2']);
+        $instance = (new class() implements Responsable {
+            use SuperResponse;
+        })->with([
+            'property_1' => 'expected value 1',
+        ])->with([
+            'property_2' => 'expected value 2',
+        ]);
 
+        /**
+         * @psalm-suppress UndefinedMagicPropertyFetch
+         * @phpstan-ignore-next-line
+         */
         $this->assertSame('expected value 1', $instance->property_1);
+        /**
+         * @psalm-suppress UndefinedMagicPropertyFetch
+         * @phpstan-ignore-next-line
+         */
         $this->assertSame('expected value 2', $instance->property_2);
     }
 
@@ -91,10 +124,18 @@ class SuperResponseTest extends TestCase
 
     public function testItOverridesWhenPassingDuplicateKeyToWith(): void
     {
-        $instance = new TestResponse();
-        $instance->with(['property' => 'first']);
-        $instance->with(['property' => 'second']);
+        $instance = (new class() implements Responsable {
+            use SuperResponse;
+        })->with([
+            'property' => 'first',
+        ])->with([
+            'property' => 'second',
+        ]);
 
+        /**
+         * @psalm-suppress UndefinedMagicPropertyFetch
+         * @phpstan-ignore-next-line
+         */
         $this->assertSame('second', $instance->property);
     }
 
