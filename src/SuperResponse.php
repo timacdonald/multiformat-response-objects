@@ -107,6 +107,7 @@ trait SuperResponse
      */
     public function toResponse($request)
     {
+        $callback = null;
         $app = Application::getInstance();
 
         $typeToCallback = $app->make(TypesToCallback::class);
@@ -117,8 +118,6 @@ trait SuperResponse
 
         $options = $typeCheck($request, $this->typeCheckers);
         assert($options instanceof Collection);
-
-        $callback = null;
 
         if ($options->isNotEmpty()) {
             $callback = $typeToCallback($options)($this);

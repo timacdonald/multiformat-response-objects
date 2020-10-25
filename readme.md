@@ -4,6 +4,9 @@
   - [Via static `make` constructor (magic)](#via-static-make-constructor-magic)
   - [Via static `new` constructor (slightly magic)](#via-static-new-constructor-slightly-magic)
   - [Via standard constructor (no magic)](#via-standard-constructor-no-magic)
+- [Type checkers](#type-checkers)
+  - [Type checkers out of the box](#type-checkers-out-of-the-box)
+  - [Defining custom type checkers](#defining-custom-type-checkers)
 - [Fallback response](#fallback-response)
   - [Global fallback out of the box](#global-fallback-out-of-the-box)
   - [Global fallback customisation](#global-fallback-customisation)
@@ -168,6 +171,18 @@ class PostController
     }
 }
 ```
+
+## Type checkers
+
+Type checkers perform the task of inspecting the incoming `Request` and determining what types are associated with it. Types may include, but are not limited too, the requested:
+
+- Content type 
+- Content version 
+- Content language 
+- Content character encodings 
+- Content encoding / compression 
+
+This package comes with some type checkers that detect some of these via common conventions, however you can easily define your own type checkers that can detect your own conventions.
 
 ## Fallback response
 

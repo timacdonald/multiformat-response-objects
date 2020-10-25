@@ -11,14 +11,15 @@ use TiMacDonald\Multiformat\Contracts\FallbackResponse as FallbackResponseContra
 
 class FallbackResponse implements FallbackResponseContract
 {
-    public function __invoke(Request $request, object $response): callable
+    /**
+     * @return mixed
+     */
+    public function __invoke(Request $request, object $response)
     {
-        return static function () use ($request, $response) {
-            if (method_exists($response, 'unsupportedResponse')) {
-                return $response->unsupportedResponse($request);
-            }
+        if (method_exists($response, 'unsupportedResponse')) {
+            return $response->unsupportedResponse($request);
+        }
 
-            return new Response(null, 406);
-        };
+        return new Response(null, 406);
     }
 }
