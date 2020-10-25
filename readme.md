@@ -182,7 +182,7 @@ Type checkers perform the task of inspecting the incoming `Request` and determin
 - Content character encodings 
 - Content encoding / compression 
 
-This package comes with some type checkers that detect some of these via common conventions, however you can easily define your own type checkers that can detect your own conventions.
+This package comes with some type checkers that detect some of these via commonly used conventions, however you can easily define your own type checkers that can detect your own conventions.
 
 ## Fallback response
 
