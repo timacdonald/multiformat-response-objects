@@ -1,3 +1,5 @@
+# Super Response
+
 ## Table of contents
 
 - [Passing data to a Super Response](#passing-data-to-a-super-response)
