@@ -1,3 +1,5 @@
+<p align="center"><img src="/art/header.png" alt="Super Response: a Laravel package by Tim MacDonald"></p>
+
 # Super Response
 
 ## Table of contents
@@ -65,7 +67,7 @@ class PostResponse
 {
     public function toJsonResponse()
     {
-        // Throws an exception as we misspelt `post` as `postzzz` 
+        // Throws an exception as we misspelt `post` as `postzzz`
         return new PostResource($this->postzzz);
     }
 
@@ -178,11 +180,11 @@ class PostController
 
 Type checkers perform the task of inspecting the incoming `Request` and determining what types are associated with it. Types may include, but are not limited too, the requested:
 
-- Content type 
-- Content version 
-- Content language 
-- Content character encodings 
-- Content encoding / compression 
+- Content type
+- Content version
+- Content language
+- Content character encodings
+- Content encoding / compression
 
 This package comes with some type checkers that detect some of these via commonly used conventions, however you can easily define your own type checkers that can detect your own conventions.
 
@@ -190,7 +192,7 @@ This package comes with some type checkers that detect some of these via commonl
 
 The fallback is returned to the client when the Super Response instance cannot negotiate a suitable response to meet the clients request. Any response that can be returned by a Controller (e.g. a string, an array, a redirect, or a response instance) may be returned as a fallback.
 
-You might like to use a fallback that returns a redirect, a default response (e.g. HTML), a `406 Not Acceptable` response, or a `300 Multiple Choices` response. 
+You might like to use a fallback that returns a redirect, a default response (e.g. HTML), a `406 Not Acceptable` response, or a `300 Multiple Choices` response.
 
 ### Global fallback out of the box
 
@@ -268,7 +270,7 @@ public function boot()
 }
 ```
 
-### Local fallback 
+### Local fallback
 
 You may also define a local fallback when returning a Super Response. This is useful if for a particular controller or nested Super Response you would like the fallback to operate in a different manner than the rest of the places you use the Super Response. The local fallback will take precedence over the global fallback.
 
@@ -301,3 +303,10 @@ class PostController
     }
 }
 ```
+
+## Credits
+
+- [Tim MacDonald](https://github.com/timacdonald)
+- [All Contributors](../../contributors)
+
+And a special (vegi) thanks to [Caneco](https://twitter.com/caneco) for the logo ✨
